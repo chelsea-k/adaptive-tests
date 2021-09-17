@@ -7,11 +7,10 @@ library(plyr)
 
 out_of_sample <- FALSE
 subpopulation <- FALSE
-cond_feature_name <- NULL # feature for conditioning subpopulation on, if needed
 
 # paths to item response data for fitting models
-IR_data_dir <- "~/Desktop/ASU/Research/CAT_project/preprocessed_original_data"
-output_dir <- "~/Desktop/ASU/Research/CAT_project/output"
+IR_data_dir <- "~/CAT_project/preprocessed_original_data"
+output_dir <- "~/CAT_project/output"
 if (out_of_sample) {
   IR_data_train_path <- file.path(IR_data_dir, "IMC_data_train_preprocessed.csv")
   IR_data_test_path <- file.path(IR_data_dir, "IMC_data_test_preprocessed.csv")
@@ -32,14 +31,14 @@ dir.create(model_dir, recursive = TRUE)
 ########################## Hyperparamters ##############################
 
 # Sampling parameters
-n_mcmc <- 20   # number of "sample populations" to draw, D 
-n_samp <- 10   # number of data points in each sample population, N
-n_prune_samp <- 10   # 2*n_mcmc * n_prune_samp is number of o.o.s data 
+n_mcmc <- 1000   # number of "sample populations" to draw, D 
+n_samp <- 1000   # number of data points in each sample population, N
+n_prune_samp <- 50   # 2*n_mcmc * n_prune_samp is number of o.o.s data 
                     #    for pruning tree under maxIPP strategy
 
 # BFA parameters for fitting f(X)
 num_factor <- 3
-nburn <- 50
+nburn <- 5000
 if (subpopulation){
   cond_vars <- list(Age = 15)   # conditioning variables for subpopulation
   cond_type <- list(">=")
@@ -96,7 +95,7 @@ mtry <- p_categorical + 1
 fit_XBART <- XBART.multinomial(y = as.matrix(data_train$y), 
                                num_class = 2, 
                                X = as.matrix(cbind(rnorm(n_train), data_train[,item_cols])), 
-                               Xtest = as.matrix(cbind(rnorm(n_train), data_test[,item_cols])),
+                               Xtest = as.matrix(cbind(rnorm(n_test), data_test[,item_cols])),
                                num_trees = num_trees, 
                                num_sweeps = 2*n_mcmc + burnin, 
                                max_depth = max_depth, 
@@ -157,9 +156,9 @@ for (j in 1:2*n_mcmc) {
   # Store data
   temp <- as.matrix(cbind(Xtilde, p_XBART_mean, p_XBART_draw, Ytilde))
   if(j%%2 == 0) {
-    synth_data_tree_fitting[j,,] <- temp[1:n_samp,]
+    synth_data_tree_fitting[j/2,,] <- temp[1:n_samp,]
   } else {
-    synth_data_uncertainty[j,,] <- temp[1:n_samp,]
+    synth_data_uncertainty[(j+1)/2,,] <- temp[1:n_samp,]
   }
   prune_data[j,,] <- temp[(n_samp+1):(n_samp + n_prune_samp),]
 }
