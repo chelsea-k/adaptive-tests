@@ -14,8 +14,7 @@ information see Krantsevich et al.
 To install these packages, after cloning the repo, in terminal enter 
 `R CMD install <path_to_package_file>`. Or, in RStudio you can do 
 `install.packages("<path_to_package_file>", type="source", repos=NULL)`
-<path_to_package_file> is e.g. "packages/bfa.mod_0.4.tar.gz" 
-with no quotes.
+`<path_to_package_file>` is e.g. `packages/bfa.mod_0.4.tar.gz`.
 
 Once the packages are installed, the scripts are generally supposed 
 to be run in this order:
@@ -38,12 +37,12 @@ through 3). Different figures and tables require data fit on all data
 or only on training data; or fit to a subpopulation or to the whole
 population. These settings are achieved through the boolean variables 
 `out.of.sample` and `subpopulation` at the beginning of the `draw_synth_*.R`
-and `fit_CART_*.R` scripts. To reproduce all plots and tables, run steps 
-1) through 3) with all four combinations (e.g. `out.of.sample = TRUE, FALSE`
+and `fit_CART_*.R` scripts. To reproduce all plots and tables, run steps 1) 
+through 3) with all four combinations (e.g. `out.of.sample = TRUE, FALSE`
 and `subpopulation = TRUE, FALSE`), then run the plotting and table
 scripts.
 
-`util_functions.R` contains several functions that are reused throughout
+Note: `util_functions.R` contains several functions that are reused throughout
 the plotting and table scripts.
 
 
