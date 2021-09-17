@@ -131,7 +131,7 @@ save(XB_predict, file = file.path(data_dir, "XB_predict"), ascii = TRUE)
 synth_data_tree_fitting <- array(NA, dim=c(n_mcmc, n_samp, p+3))
 synth_data_uncertainty <- array(NA, dim=c(n_mcmc, n_samp, p+3))
 prune_data <- array(NA, dim=c(2*n_mcmc, n_prune_samp, p+3))
-for (j in 1:2*n_mcmc) {
+for (j in 1:(2*n_mcmc)) {
   cat(sprintf("----------------------Predicting for iteration %d out of %d \n", j, 2*n_mcmc))		
   # Draw samples
   Xtilde <- predict_idx(fit_BFA, post.idx = j, n.samp = n_samp + n_prune_samp, 
@@ -144,7 +144,7 @@ for (j in 1:2*n_mcmc) {
   p_XBART_draw <- p_XBART_draw$yhats[,,2]
   Ytilde <- rbinom(n = length(p_XBART_draw), size=1, prob=p_XBART_draw)
   p_XBART_mean <- 0
-  for (k in 1:n_mcmc){
+  for (k in 1:(2*n_mcmc)){
     p_XBART <- predict.XBARTmultinomial(fit_XBART,
                                        X=as.matrix(cbind(rnorm(nrow(Xtilde)), 
                                                          Xtilde[,X_item_cols])), 
