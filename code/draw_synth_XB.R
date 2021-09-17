@@ -148,7 +148,7 @@ for (j in 1:(2*n_mcmc)) {
     p_XBART <- predict.XBARTmultinomial(fit_XBART,
                                        X=as.matrix(cbind(rnorm(nrow(Xtilde)), 
                                                          Xtilde[,X_item_cols])), 
-                                       iteration=2L*k)
+                                       iteration=1L*k)
     p_XBART_mean <- p_XBART_mean + p_XBART$yhats[,,2]
   }
   p_XBART_mean <- p_XBART_mean/n_mcmc
