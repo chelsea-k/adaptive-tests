@@ -74,7 +74,8 @@ ggplot(ROC.points, aes(x=Specificity, y=Sensitivity, group=w)) +
   scale_colour_manual(values = cbPalette) + 
   scale_shape_manual(values=c(16,15,17)) +
   theme(plot.title = element_text(hjust = 0.5)) +
-  facet_grid(cols=vars(post.idx), labeller = label_both)
+  facet_grid(cols=vars(post.idx), labeller = label_both) +
+  theme_bw()
 
 
 

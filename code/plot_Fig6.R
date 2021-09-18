@@ -75,6 +75,7 @@ ggplot(delta.draws.all, aes(x=maxIPP, y=Delta, fill=Population)) +
  theme(plot.title = element_text(hjust = 0.5))  + 
  ggtitle(paste0("Utility Differences")) + 
  ylab(expression(Delta)) + xlab("Number of Items") +
- scale_fill_manual(values=greyPalette)
+ scale_fill_manual(values=greyPalette) +
+ theme_bw()
 
 

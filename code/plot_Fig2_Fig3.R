@@ -12,7 +12,7 @@ cutoffs = c(C1 = 0.10, C2 = 0.25, C3 = 0.50)
 
 
 # Read in the data for ROC curve; choose a few post. idx for faster plotting
-synth.df = read.csv(paste0("data/in_sample/all/synthetic_data/synth.XB.csv"))
+synth.df = read.csv(paste0("data/in_sample/all/synthetic_data/synth_treefitting_XB.csv"))
 temp.df = synth.df[which(synth.df$post.idx %in% c(1:100)),] 
 
 # Compute sensitivity/specificity/cutoffs for synth data
@@ -30,7 +30,8 @@ ggplot(metrics, aes(x=Specificity, y=Sensitivity)) +
   scale_shape_manual(values=c(15,16,17))+
   geom_segment(aes(x = 1, xend = 0, y = 0, yend = 1), color="black", linetype="dashed") +
   theme(plot.title = element_text(hjust = 0.5)) +
-  ggtitle("ROC Curve Example")
+  ggtitle("ROC Curve Example") +
+  theme_bw()
 
 # Create dataframes for point, rectangle, and line segments in Figure 3
 point.df = metrics[which.max(metrics$Specificity+metrics$Sensitivity),]
@@ -51,7 +52,8 @@ ggplot(metrics, aes(x=Specificity, y=Sensitivity)) +
                aes(x = x1, xend = x2, y = y1, yend = y2)) +
   geom_point(data=point.df, size=4) +
   theme(plot.title = element_text(hjust = 0.5)) +
-  ggtitle("Utility Function and ROC Curve")
+  ggtitle("Utility Function and ROC Curve") +
+  theme_bw()
 
 
 

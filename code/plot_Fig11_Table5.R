@@ -8,6 +8,7 @@ library(tidyr)
 library(dplyr)
 library(cdata)
 library(xtable)
+library(ggplot2)
 
 # paraemeters
 maxIPP.list=c(2:15)
@@ -79,7 +80,8 @@ ggplot(results_long_diff, aes(x=Num.Items, y=Difference, fill=Higher)) +
   geom_bar(stat = "identity") + 
   facet_grid(rows=vars(Quantity)) +
   xlab("maxIPP") + scale_fill_manual(values=cbPalette) +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  theme_bw()
 
 # Reformat results to be as in Table 5 
 cT <- dplyr::tribble(

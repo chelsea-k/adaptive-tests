@@ -105,4 +105,5 @@ ggplot(delta.draws.all, aes(y=Delta, fill=Method)) +
   ylab(expression(Delta)) + xlab("Number of Items") +
   scale_fill_manual(values=cbPalette) +
   facet_grid(cols = vars(num.items), switch="both") +
-  theme(axis.text.x=element_blank(), axis.ticks.x = element_blank())
+  theme(axis.text.x=element_blank(), axis.ticks.x = element_blank()) +
+  theme_bw()

@@ -75,6 +75,7 @@ ggplot(delta.draws.all, aes(x=maxIPP, y=Delta, fill=w)) +
  geom_boxplot(outlier.shape=NA, position=position_dodge2(padding=0.2, width=1.2)) + 
  theme(plot.title = element_text(hjust = 0.5))  + 
  ggtitle(paste0("Utility Differences")) + ylab(expression(Delta)) +
- scale_fill_manual(values=cbPalette)
+ scale_fill_manual(values=cbPalette) +
+ theme_bw()
 
 
