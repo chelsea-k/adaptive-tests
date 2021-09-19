@@ -100,7 +100,9 @@ for (i in seq_along(maxIPP_vals)){
         fit_rpart = rpartMaxVPP::rpart(p ~., data = cbind(p=fitting_data$phat, fitting_data[,item_cols]),
                        method = "anova", cp=cp, maxdepth=25, minbucket = minbucket, maxvpp=maxIPP,
                        xval=0, maxcompete=0, maxsurrogate=0, usesurrogate=0, model=TRUE)
-        save(fit_rpart, file=tree_savefile, ascii=TRUE)
+        if(maxIPP == 3){
+          save(fit_rpart, file=tree_savefile, ascii=TRUE)
+        }
     }
     
     # check if optimum tree exists 
@@ -134,9 +136,11 @@ for (i in seq_along(maxIPP_vals)){
         }
       
        # Prune to optimal cp and store optimally pruned tree
-       opt_tree = prune(fit_rpart, cp=opt_cp)
+        opt_tree = prune(fit_rpart, cp=opt_cp)
+  }
+    if(maxIPP == 3){
+      save(opt_tree, file=opt_tree_savefile, ascii=TRUE)
     }
-    save(opt_tree, file=opt_tree_savefile, ascii=TRUE)
   } else {
     cat("Loading optimally pruned regression tree \n")
     load(opt_tree_savefile)
