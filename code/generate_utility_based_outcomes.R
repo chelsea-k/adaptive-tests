@@ -1,6 +1,6 @@
 # set parameters
-out_of_sample <- FALSE
-subpopulation <- FALSE
+out_of_sample <- TRUE
+subpopulation <- TRUE
 
 # read in original data
 IMC_data_all <- read.csv("preprocessed_original_data/IMC_data_all_preprocessed.csv")

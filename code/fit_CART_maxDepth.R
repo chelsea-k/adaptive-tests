@@ -25,6 +25,7 @@ data_train$y <- as.integer(data_train$y)
 data_test$y <- as.integer(data_test$y)
 
 # read in generated data
+cat("Loading synthetic data...\n")
 synth_data_root <- "output"
 folder = ifelse(out_of_sample, 
                 file.path(synth_data_root, "out_of_sample"), 
@@ -54,6 +55,7 @@ dir.create(results_dir, recursive = TRUE)
 
 # Create dfs for saving RPART predictions; 
 # "p." dfs are for regression trees, "y." dfs are for classification trees
+cat("Creating dataframes for storing results...\n")
 m_colnames = paste0("m.", CART_params$maxDepth_vals)
 
 p_maxDepth_RF_synth = p_maxDepth_XB_synth = data.frame(matrix(NA, nrow=n_synth, ncol=n_maxDepth))
@@ -81,7 +83,7 @@ for (i in seq_along(maxDepth_vals)){
   cat(paste0("---------------- maxdepth = ", maxdepth, " ----------------\n"))
   if (tree_type == "classification") {
     cat("Fitting classifcation tree \n")
-    fit_rpart = rpart(y ~.,data = cbind(y=as.factor(fitting_data$y), fitting_data[,item_cols]), 
+    fit_rpart = rpartMaxVPP::rpart(y ~.,data = cbind(y=as.factor(fitting_data$y), fitting_data[,item_cols]), 
                       cp=0, method = "class", maxdepth=maxdepth, xval=0, maxcompete=0,
                       maxsurrogate=0, usesurrogate=0)
     save(fit_rpart, file=paste0(savefile, ".classification_maxDepth.", maxdepth), ascii=TRUE)
@@ -118,6 +120,7 @@ return(results)
 }
 
 # Run function to get maxDepth results and store results
+cat("Fitting regression trees for RF...\n")
 maxDepth_RF_results = fit_CART_maxDepth(fitting_data = synth_RF, predict_data = synth_XB_UQ,
                                         test_data = data_test, item_cols = RF_item_cols, 
                                         savefile = file.path(model_dir, "fit.CART.RF"),
@@ -126,6 +129,7 @@ maxDepth_RF_results = fit_CART_maxDepth(fitting_data = synth_RF, predict_data = 
                                         tree_type = "regression", oos = out_of_sample, 
                                         params = CART_params)
 
+cat("Fitting regression trees for XBART...\n")
 maxDepth_XB_results = fit_CART_maxDepth(fitting_data = synth_XB, predict_data = synth_XB_UQ, 
                                         test_data = data_test, item_cols = XB_item_cols, 
                                         savefile = file.path(model_dir, "fit.CART.XB"),
@@ -134,6 +138,7 @@ maxDepth_XB_results = fit_CART_maxDepth(fitting_data = synth_XB, predict_data = 
                                         tree_type = "regression", oos = out_of_sample, 
                                         params = CART_params)
 
+cat("Fitting classification trees for utility based outcome data...\n")
 class_util_results = fit_CART_maxDepth(fitting_data = synth_XB_util, predict_data = synth_XB_UQ,
                                        test_data = data_test, item_cols = XB_item_cols, 
                                        savefile = file.path(model_dir, "fit.CART.util"),
@@ -142,6 +147,7 @@ class_util_results = fit_CART_maxDepth(fitting_data = synth_XB_util, predict_dat
                                        tree_type = "classification", oos = out_of_sample, 
                                        params = CART_params)
 
+cat("Fitting classification trees for real IMC data...\n")
 class_real_results = fit_CART_maxDepth(fitting_data = data_train, predict_data = synth_XB_UQ,
                                        test_data = data_test, item_cols = real_item_cols, 
                                        savefile = file.path(model_dir, "fit.CART.real"),
@@ -150,6 +156,7 @@ class_real_results = fit_CART_maxDepth(fitting_data = data_train, predict_data =
                                        tree_type = "classification", oos = out_of_sample, 
                                        params = CART_params)
 
+cat("Fitting classification trees for RF synthetic data...\n")
 class_RF_results = fit_CART_maxDepth(fitting_data = synth_RF, predict_data = synth_XB_UQ,
                                      test_data = data_test, item_cols = RF_item_cols, 
                                      savefile = file.path(model_dir, "fit.CART.RF"),
@@ -158,6 +165,7 @@ class_RF_results = fit_CART_maxDepth(fitting_data = synth_RF, predict_data = syn
                                      tree_type = "classification", oos = out_of_sample, 
                                      params = CART_params)
 
+cat("Fitting classification trees for XBART synthetic data...\n")
 class_XB_results = fit_CART_maxDepth(fitting_data = synth_XB, predict_data = synth_XB_UQ,
                                      test_data = data_test, item_cols = XB_item_cols, 
                                      savefile = file.path(model_dir, "fit.CART.XB"),
