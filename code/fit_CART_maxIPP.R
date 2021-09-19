@@ -23,7 +23,7 @@ n_maxIPP = length(CART_params$maxIPP_vals)
 #   data_train = read.csv("data/item_response_data/item.response.data.all.csv")
 #   data_test = data_train
 # }
-original_data_dir <- "~/Desktop/ASU/Research/CAT_project/preprocessed_original_data"
+original_data_dir <- "preprocessed_original_data"
 if(out_of_sample){
   data_train = read.csv(file.path(original_data_dir, "IMC_data_train_preprocessed.csv"))
   data_test = read.csv(file.path(original_data_dir, "IMC_data_test_preprocessed.csv"))
@@ -42,7 +42,7 @@ data_test$y <- as.integer(data_test$y)
 # prune_RF = read.csv(paste0(folder, "synthetic_data/prune_RF.csv"))
 # synth_XB = read.csv(paste0(folder, "synthetic_data/synth_XB.csv"))
 # prune_XB = read.csv(paste0(folder, "synthetic_data/prune_XB.csv"))
-synth_data_root <- "~/Desktop/output"
+synth_data_root <- "output"
 folder = ifelse(out_of_sample, 
                 file.path(synth_data_root, "out_of_sample"), 
                 file.path(synth_data_root, "in_sample"))
@@ -61,7 +61,7 @@ RF_item_cols = which(colnames(synth_RF) %in% item_names)
 XB_item_cols = which(colnames(synth_XB) %in% item_names)
 
 # set up storage folders
-model_dir = file.path(folder, "model_fits/")
+model_dir = file.path(folder, "model_fits_CART/")
 results_dir = file.path(folder, "results/")
 dir.create(model_dir, recursive = TRUE)
 dir.create(results_dir, recursive = TRUE)
@@ -87,46 +87,60 @@ patience = params$patience
 for (i in seq_along(maxIPP_vals)){
   maxIPP=maxIPP_vals[[i]]
   cat(paste0("---------------- maxIPP = ", maxIPP, " ----------------\n"))
-  # fit the large CART tree
-  fit_rpart = rpartMaxVPP::rpart(p ~., data = cbind(p=fitting_data$phat, fitting_data[,item_cols]),
-                 method = "anova", cp=cp, maxdepth=25, minbucket = minbucket, maxvpp=maxIPP,
-                 xval=0, maxcompete=0, maxsurrogate=0, usesurrogate=0, model=TRUE)
-  save(fit_rpart, file=paste0(savefile, ".regression_maxIPP.", maxIPP), ascii=TRUE)
   
-  # find optimal pruning point based on threshold/patience
-  cplist = fit_rpart$cptable
-  threshold =  ifelse(maxIPP<5, 1e-4, 1e-5)
-  opt_cp = cplist[1,"CP"]
-  root_tree = prune(fit_rpart, cp=opt_cp)
-  p_CART = predict(root_tree, newdata = prune_data[,item_cols], type='vector')
-  rmse_prev = sqrt(mean((p_CART - prune_data$phat)^2))
-  wait=0
-  if(nrow(cplist) == 1) {
-    opt_tree = fit_rpart
-  } else {
-      for (j in 2:nrow(cplist)) {
-        if (j%%50==0) {cat("Predicting for cp: ", j, "out of", nrow(cplist),"\n")}
-        this_cp = cplist[j,"CP"]
-        pruned_tree = prune(fit_rpart, cp=this_cp)
-        p_CART = predict(pruned_tree, newdata = prune_data[,item_cols], type='vector')
-        rmse = sqrt(mean((p_CART - prune_data$phat)^2))
-        rmse_diff = rmse_prev - rmse
-        if (rmse_diff > threshold){
-            rmse_prev = rmse
-            opt_cp = this_cp
-            wait=0
-        } else {
-            wait = wait + 1
-            rmse_prev = rmse
-            if (wait >= patience){break}
-        }  
-      }
+  # check if tree already exists
+  tree_savefile <- paste0(savefile, ".regression_maxIPP.", maxIPP)
+  opt_tree_savefile <- paste0(savefile, ".regression_maxIPP.", maxIPP, ".opt")
+  if(!file.exists(opt_tree_savefile)) {
+    if(file.exists(tree_savefile)) {
+      cat("Loading big regression tree \n")
+      load(tree_savefile)
+    } else {
+        # fit the large CART tree
+        fit_rpart = rpartMaxVPP::rpart(p ~., data = cbind(p=fitting_data$phat, fitting_data[,item_cols]),
+                       method = "anova", cp=cp, maxdepth=25, minbucket = minbucket, maxvpp=maxIPP,
+                       xval=0, maxcompete=0, maxsurrogate=0, usesurrogate=0, model=TRUE)
+        save(fit_rpart, file=tree_savefile, ascii=TRUE)
+    }
     
-     # Prune to optimal cp and store optimally pruned tree
-     opt_tree = prune(fit_rpart, cp=opt_cp)
+    # check if optimum tree exists 
+    # find optimal pruning point based on threshold/patience
+    cplist = fit_rpart$cptable
+    threshold =  ifelse(maxIPP<5, 1e-4, 1e-5)
+    opt_cp = cplist[1,"CP"]
+    root_tree = prune(fit_rpart, cp=opt_cp)
+    p_CART = predict(root_tree, newdata = prune_data[,item_cols], type='vector')
+    rmse_prev = sqrt(mean((p_CART - prune_data$phat)^2))
+    wait=0
+    if(nrow(cplist) == 1) {
+      opt_tree = fit_rpart
+    } else {
+        for (j in 2:nrow(cplist)) {
+          if (j%%50==0) {cat("Predicting for cp: ", j, "out of", nrow(cplist),"\n")}
+          this_cp = cplist[j,"CP"]
+          pruned_tree = prune(fit_rpart, cp=this_cp)
+          p_CART = predict(pruned_tree, newdata = prune_data[,item_cols], type='vector')
+          rmse = sqrt(mean((p_CART - prune_data$phat)^2))
+          rmse_diff = rmse_prev - rmse
+          if (rmse_diff > threshold){
+              rmse_prev = rmse
+              opt_cp = this_cp
+              wait=0
+          } else {
+              wait = wait + 1
+              rmse_prev = rmse
+              if (wait >= patience){break}
+          }  
+        }
+      
+       # Prune to optimal cp and store optimally pruned tree
+       opt_tree = prune(fit_rpart, cp=opt_cp)
+    }
+    save(opt_tree, file=opt_tree_savefile, ascii=TRUE)
+  } else {
+    cat("Loading optimally pruned regression tree \n")
+    load(opt_tree_savefile)
   }
-  
-  save(opt_tree, file=paste0(savefile, ".regression_maxIPP.", maxIPP, ".opt"), ascii=TRUE)
   
   # Store CART predictions from pruned tree on synthetic XBART data
   opt_p_CART = predict(opt_tree, predict_data)
@@ -156,6 +170,10 @@ maxIPP_RF_results = fit_CART_maxIPP(fitting_data = synth_RF, prune_data = prune_
                              savefile = file.path(model_dir, "fit.CART.RF"),
                              p_df_synth = p_maxIPP_RF_synth, p_df_test = p_maxIPP_RF_test, 
                              oos = out_of_sample, params = CART_params)
+write.csv(maxIPP_RF_results$p_synth, file.path(results_dir, "p_maxIPP_RF_synth.csv"), row.names = F)
+if(out_of_sample) {
+  write.csv(maxIPP_RF_results$p_test, file.path(results_dir, "p_maxIPP_RF_test.csv"), row.names = F)
+}
 
 maxIPP_XB_results = fit_CART_maxIPP(fitting_data = synth_XB, prune_data = prune_XB, 
                              predict_data = synth_XB_UQ, test_data = data_test, 
@@ -164,10 +182,7 @@ maxIPP_XB_results = fit_CART_maxIPP(fitting_data = synth_XB, prune_data = prune_
                              p_df_synth = p_maxIPP_XB_synth, p_df_test = p_maxIPP_XB_test, 
                              oos = out_of_sample, params = CART_params)
 
-write.csv(maxIPP_RF_results$p_synth, file.path(results_dir, "p_maxIPP_RF_synth.csv"), row.names = F)
 write.csv(maxIPP_XB_results$p_synth, file.path(results_dir, "p_maxIPP_XB_synth.csv"), row.names = F)
-
 if (out_of_sample){
-  write.csv(maxIPP_RF_results$p_test, file.path(results_dir, "p_maxIPP_RF_test.csv"), row.names = F)
   write.csv(maxIPP_XB_results$p_test, file.path(results_dir, "p_maxIPP_XB_test.csv"), row.names = F)
 }
