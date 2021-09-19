@@ -82,11 +82,12 @@ for (i in seq_along(maxDepth_vals)){
   m_col = which(colnames(pred_df_synth) == paste0("m.", maxdepth))
   cat(paste0("---------------- maxdepth = ", maxdepth, " ----------------\n"))
   if (tree_type == "classification") {
-    cat("Fitting or loading classifcation tree \n")
     tree_savefile <- paste0(savefile, ".classification_maxDepth.", maxdepth)
     if(file.exists(tree_savefile)) {
+      cat("Loading classifcation tree \n")
       load(tree_savefile)
     } else {
+      cat("Fitting classifcation tree \n")
       fit_rpart = rpartMaxVPP::rpart(y ~.,data = cbind(y=as.factor(fitting_data$y), fitting_data[,item_cols]), 
                         cp=0, method = "class", maxdepth=maxdepth, xval=0, maxcompete=0,
                         maxsurrogate=0, usesurrogate=0)
@@ -102,11 +103,12 @@ for (i in seq_along(maxDepth_vals)){
   }
   
   if (tree_type == "regression") {
-    cat("Fitting or loading regression tree \n")
     tree_savefile <- paste0(savefile, ".regression_maxDepth.", maxdepth)
     if(file.exists(tree_savefile)){
+      cat("Loading regression tree \n")
       load(tree_savefile)
     } else{
+      cat("Fitting regression tree \n")
       fit_rpart = rpart(phat ~.,data = cbind(phat=fitting_data$phat, fitting_data[,item_cols]), 
                         cp=0, method = "anova", maxdepth=maxdepth, xval=0, maxcompete=0,
                         maxsurrogate=0, usesurrogate=0)
@@ -128,7 +130,7 @@ return(results)
 }
 
 # Run function to get maxDepth results and store results
-cat("\n=== Fitting regression trees for RF... ===\n\n")
+cat("\n=== Fitting regression trees for RF synthetic data ===\n")
 maxDepth_RF_results = fit_CART_maxDepth(fitting_data = synth_RF, predict_data = synth_XB_UQ,
                                         test_data = data_test, item_cols = RF_item_cols, 
                                         savefile = file.path(model_dir, "fit.CART.RF"),
@@ -141,7 +143,7 @@ if (out_of_sample) {
   write.csv(maxDepth_RF_results$pred_test, file.path(results_dir, "p_maxDepth_RF_test.csv"), row.names = F)
 }
 
-cat("=== Fitting regression trees for XBART... ===\n\n")
+cat("\n=== Fitting regression trees for XBART synthetic data ===\n")
 maxDepth_XB_results = fit_CART_maxDepth(fitting_data = synth_XB, predict_data = synth_XB_UQ, 
                                         test_data = data_test, item_cols = XB_item_cols, 
                                         savefile = file.path(model_dir, "fit.CART.XB"),
@@ -154,7 +156,7 @@ if (out_of_sample){
   write.csv(maxDepth_XB_results$pred_test, file.path(results_dir, "p_maxDepth_XB_test.csv"), row.names = F)
 }
 
-cat("=== Fitting classification trees for utility based outcome data... ===\n\n")
+cat("\n=== Fitting classification trees for utility based outcome data ===\n")
 class_util_results = fit_CART_maxDepth(fitting_data = synth_XB_util, predict_data = synth_XB_UQ,
                                        test_data = data_test, item_cols = XB_item_cols, 
                                        savefile = file.path(model_dir, "fit.CART.util"),
@@ -167,7 +169,7 @@ if (out_of_sample){
   write.csv(class_util_results$pred_test, file.path(results_dir, "y_util_test.csv"), row.names = F)
 }
 
-cat("=== Fitting classification trees for real IMC data... ===\n\n")
+cat("\n=== Fitting classification trees for real IMC data ===\n")
 class_real_results = fit_CART_maxDepth(fitting_data = data_train, predict_data = synth_XB_UQ,
                                        test_data = data_test, item_cols = real_item_cols, 
                                        savefile = file.path(model_dir, "fit.CART.real"),
@@ -180,7 +182,7 @@ if (out_of_sample){
   write.csv(class_real_results$pred_test, file.path(results_dir, "y_real_test.csv"), row.names = F)
 }
 
-cat("=== Fitting classification trees for RF synthetic data... ===\n\n")
+cat("\n=== Fitting classification trees for RF synthetic data ===\n")
 class_RF_results = fit_CART_maxDepth(fitting_data = synth_RF, predict_data = synth_XB_UQ,
                                      test_data = data_test, item_cols = RF_item_cols, 
                                      savefile = file.path(model_dir, "fit.CART.RF"),
@@ -193,7 +195,7 @@ if (out_of_sample){
   write.csv(class_RF_results$pred_test, file.path(results_dir, "y_RF_test.csv"), row.names = F)
 }
 
-cat("=== Fitting classification trees for XBART synthetic data... ===\n\n")
+cat("\n=== Fitting classification trees for XBART synthetic data ===\n\n")
 class_XB_results = fit_CART_maxDepth(fitting_data = synth_XB, predict_data = synth_XB_UQ,
                                      test_data = data_test, item_cols = XB_item_cols, 
                                      savefile = file.path(model_dir, "fit.CART.XB"),
