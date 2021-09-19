@@ -102,7 +102,7 @@ for (i in seq_along(maxDepth_vals)){
   }
   
   if (tree_type == "regression") {
-    cat("Fitting regression tree \n")
+    cat("Fitting or loading regression tree \n")
     tree_savefile <- paste0(savefile, ".regression_maxDepth.", maxdepth)
     if(file.exists(tree_savefile)){
       load(tree_savefile)
