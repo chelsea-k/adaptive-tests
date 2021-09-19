@@ -8,6 +8,7 @@ for (i in seq_along(output_files)) {
   my_file <- output_files[[i]]
   path_to_file <- file.path("output", my_file)
   if (str_detect(my_file, "fit.CART.")) {
+	cat("trying_to_load..\n")	  
     load(path_to_file)
     if (str_detect(my_file, "opt")) {
       opt_tree$y <- NULL

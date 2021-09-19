@@ -42,6 +42,7 @@ data_test$y <- as.integer(data_test$y)
 # prune_RF = read.csv(paste0(folder, "synthetic_data/prune_RF.csv"))
 # synth_XB = read.csv(paste0(folder, "synthetic_data/synth_XB.csv"))
 # prune_XB = read.csv(paste0(folder, "synthetic_data/prune_XB.csv"))
+cat("Loading data...\n")
 synth_data_root <- "output"
 folder = ifelse(out_of_sample, 
                 file.path(synth_data_root, "out_of_sample"), 
