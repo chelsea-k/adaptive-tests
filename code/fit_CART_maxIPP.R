@@ -16,13 +16,6 @@ n_maxIPP = length(CART_params$maxIPP_vals)
 ########################## Data Preparation ##############################
 
 # read in item response data
-# if(out_of_sample){
-#   data_train = read.csv("data/item_response_data/item.response.data_train.csv")
-#   data_test = read.csv("data/item_response_data/item.response.data_test.csv")
-# } else {
-#   data_train = read.csv("data/item_response_data/item.response.data.all.csv")
-#   data_test = data_train
-# }
 original_data_dir <- "preprocessed_original_data"
 if(out_of_sample){
   data_train = read.csv(file.path(original_data_dir, "IMC_data_train_preprocessed.csv"))
@@ -36,31 +29,28 @@ data_train$y <- as.integer(data_train$y)
 data_test$y <- as.integer(data_test$y)
 
 # read in generated data
-# folder = ifelse(out_of_sample, "data/out_of_sample/", "data/in_sample/")
-# folder =  paste0(folder, ifelse(subpopulation, "subpopulation/", "all/"))
-# synth_RF = read.csv(paste0(folder, "synthetic_data/synth_RF.csv"))
-# prune_RF = read.csv(paste0(folder, "synthetic_data/prune_RF.csv"))
-# synth_XB = read.csv(paste0(folder, "synthetic_data/synth_XB.csv"))
-# prune_XB = read.csv(paste0(folder, "synthetic_data/prune_XB.csv"))
-cat("Loading data...\n")
-synth_data_root <- "output"
-folder = ifelse(out_of_sample, 
-                file.path(synth_data_root, "out_of_sample"), 
-                file.path(synth_data_root, "in_sample"))
-folder =  file.path(folder, ifelse(subpopulation, "subpopulation", "all"))
+cat("Loading synthetic data...\n")
+synth_data_root <- "~/Desktop/output"
+folder_root = ifelse(out_of_sample, 
+                     file.path(synth_data_root, "out_of_sample"), 
+                     file.path(synth_data_root, "in_sample"))
+folder =  file.path(folder_root, ifelse(subpopulation, "subpopulation", "all"))
 synth_data_folder = file.path(folder, "synthetic_data")
-synth_RF = read.csv(file.path(synth_data_folder, "synth_treefitting_RF.csv"))
+synth_treefitting_RF = read.csv(file.path(synth_data_folder, "synth_treefitting_RF.csv"))
+synth_treefitting_XB = read.csv(file.path(synth_data_folder, "synth_treefitting_XB.csv"))
+synth_uncertainty_XB = read.csv(file.path(synth_data_folder, "synth_uncertainty_XB.csv"))
 prune_RF = read.csv(file.path(synth_data_folder, "prune_RF.csv"))
-synth_XB = read.csv(file.path(synth_data_folder, "synth_treefitting_XB.csv"))
-synth_XB_UQ = read.csv(file.path(synth_data_folder, "synth_uncertainty_XB.csv"))
 prune_XB = read.csv(file.path(synth_data_folder, "prune_XB.csv"))
-n_synth = nrow(synth_XB)
-synth_XB_sub = read.csv("output/in_sample/subpopulation/synthetic_data/synth_uncertainty_XB.csv")
+
+# read in synthetic data from other population
+folder_other_pop =  file.path(folder_root, ifelse(subpopulation, "all", "subpopulation"))
+synth_data_folder_other_pop = file.path(folder_other_pop, "synthetic_data")
+synth_uncertainty_XB_other_pop = read.csv(file.path(synth_data_folder_other_pop, "synth_uncertainty_XB.csv"))
+n_synth = nrow(synth_treefitting_XB)
+n_real = nrow(data_train)
 
 # get column info for demo and item covariates
 item_names = setdiff(colnames(data_train), c("y", "Age"))
-RF_item_cols = which(colnames(synth_RF) %in% item_names)
-XB_item_cols = which(colnames(synth_XB) %in% item_names)
 
 # set up storage folders
 model_dir = file.path(folder, "model_fits_CART/")
@@ -70,16 +60,44 @@ dir.create(results_dir, recursive = TRUE)
 
 ########################## Model Fitting ##############################
 
-# Create df for saving RPART predictions 
-p_maxIPP_RF_synth = p_maxIPP_XB_synth = data.frame(matrix(NA, nrow=nrow(synth_RF), ncol=n_maxIPP))
-colnames(p_maxIPP_RF_synth) = colnames(p_maxIPP_XB_synth) = paste0("m.", CART_params$maxIPP_vals)
+# set up results df for RF regression
+cat("Creating dataframes for storing results...\n")
+m_colnames = paste0("m.", CART_params$maxDepth_vals)
 
-p_maxIPP_RF_test = p_maxIPP_XB_test = data.frame(matrix(NA, nrow=nrow(data_test), ncol=n_maxIPP))
-colnames(p_maxIPP_RF_test) = colnames(p_maxIPP_XB_test) = paste0("m.", CART_params$maxIPP_vals)
+p_maxIPP_RF.synth_treefitting_RF = data.frame(matrix(NA, nrow=n_synth, ncol=n_maxIPP))
+p_maxIPP_RF.synth_uncertainty_XB = data.frame(matrix(NA, nrow=n_synth, ncol=n_maxIPP))
+p_maxIPP_RF.synth_uncertainty_XB_other_pop = data.frame(matrix(NA, nrow=n_synth, ncol=n_maxIPP))
+
+colnames(p_maxIPP_RF.synth_treefitting_RF) = m_colnames
+colnames(p_maxIPP_RF.synth_uncertainty_XB) = m_colnames
+colnames(p_maxIPP_RF.synth_uncertainty_XB_other_pop) = m_colnames
+
+# set up results for XB regression
+p_maxIPP_XB.synth_treefitting_XB = data.frame(matrix(NA, nrow=n_synth, ncol=n_maxIPP))
+p_maxIPP_XB.synth_uncertainty_XB = data.frame(matrix(NA, nrow=n_synth, ncol=n_maxIPP))
+p_maxIPP_XB.synth_uncertainty_XB_other_pop = data.frame(matrix(NA, nrow=n_synth, ncol=n_maxIPP))
+
+colnames(p_maxIPP_XB.synth_treefitting_XB) = m_colnames
+colnames(p_maxIPP_XB.synth_uncertainty_XB) = m_colnames
+colnames(p_maxIPP_XB.synth_uncertainty_XB_other_pop) = m_colnames
+
+p_maxIPP_RF.test = p_maxIPP_XB.test = data.frame(matrix(NA, nrow=nrow(data_test), ncol=n_maxIPP))
+colnames(p_maxIPP_RF.test) = colnames(p_maxIPP_XB.test) = paste0("m.", CART_params$maxIPP_vals)
 
 # Define function for fitting CART via maxIPP and pruning
-fit_CART_maxIPP = function(fitting_data, prune_data, predict_data, test_data, 
-                           item_cols, savefile, p_df_synth, p_df_test, oos, params) {
+fit_CART_maxIPP = function(fitting_data, 
+                           prune_data, 
+                           predict_uncertainty_data,
+                           predict_uncertainty_data_other_pop, 
+                           test_data, 
+                           item_names, 
+                           savefile, 
+                           pred_df_treefitting, 
+                           pred_df_synth_uncertainty,
+                           pred_df_synth_uncertainty_other_pop, 
+                           pred_df_test, 
+                           oos, 
+                           params) {
  
 maxIPP_vals = params$maxIPP_vals   
 cp = params$cp
@@ -99,6 +117,7 @@ for (i in seq_along(maxIPP_vals)){
       load(tree_savefile)
     } else {
         # fit the large CART tree
+        item_cols = which(colnames(fitting_data) %in% item_names)
         fit_rpart = rpartMaxVPP::rpart(p ~., data = cbind(p=fitting_data$phat, fitting_data[,item_cols]),
                        method = "anova", cp=cp, maxdepth=25, minbucket = minbucket, maxvpp=maxIPP,
                        xval=0, maxcompete=0, maxsurrogate=0, usesurrogate=0, model=TRUE)
@@ -149,46 +168,77 @@ for (i in seq_along(maxIPP_vals)){
   }
   
   # Store CART predictions from pruned tree on synthetic XBART data
-  opt_p_CART = predict(opt_tree, predict_data)
-  m_col = which(colnames(p_df_synth) == paste0("m.", maxIPP))
-  p_df_synth[,m_col] = opt_p_CART
+  opt_p_CART = predict(opt_tree, fitting_data)
+  m_col = which(colnames(pred_df_treefitting) == paste0("m.", maxIPP))
+  pred_df_treefitting[,m_col] = opt_p_CART
+  
+  opt_p_CART = predict(opt_tree, predict_uncertainty_data)
+  m_col = which(colnames(pred_df_synth_uncertainty) == paste0("m.", maxIPP))
+  pred_df_synth_uncertainty[,m_col] = opt_p_CART
+  
+  opt_p_CART = predict(opt_tree, predict_uncertainty_data_other_pop)
+  m_col = which(colnames(pred_df_synth_uncertainty_other_pop) == paste0("m.", maxIPP))
+  pred_df_synth_uncertainty_other_pop[,m_col] = opt_p_CART
+  
   
   if(oos){
     # Store CART predictions from pruned tree on test data
     opt_p_test = predict(opt_tree, test_data)
-    m_col = which(colnames(p_df_test) == paste0("m.", maxIPP))
-    p_df_test[,m_col] = opt_p_test
+    m_col = which(colnames(pred_df_test) == paste0("m.", maxIPP))
+    pred_df_test[,m_col] = opt_p_test
   }
   
 }
+
+results = list(pred_treefitting = pred_df_treefitting, 
+               pred_synth_uncertainty = pred_df_synth_uncertainty, 
+               pred_synth_uncertainty_other_pop = pred_df_synth_uncertainty_other_pop)
+
 if (out_of_sample){
-  results = list(p_synth = p_df_synth, p_test = p_df_test)
-} else {
-  results = list(p_synth = p_df_synth)
-}
+  results$p_test <- pred_df_test
+} 
+
 return(results)
 }
 
-## Run function to get maxIPP results and store results
-#maxIPP_RF_results = fit_CART_maxIPP(fitting_data = synth_RF, prune_data = prune_RF, 
-#                             predict_data = synth_RF, test_data = data_test, 
-#                             item_cols = RF_item_cols, 
-#                             savefile = file.path(model_dir, "fit.CART.RF.new_predict"),
-#                             p_df_synth = p_maxIPP_RF_synth, p_df_test = p_maxIPP_RF_test, 
-#                             oos = out_of_sample, params = CART_params)
-#write.csv(maxIPP_RF_results$p_synth, file.path(results_dir, "p_maxIPP_RF_treefitting_data.csv"), row.names = F)
-#if(out_of_sample) {
-#  write.csv(maxIPP_RF_results$p_test, file.path(results_dir, "p_maxIPP_RF_test_second.csv"), row.names = F)
-#}
+# Run function to get maxIPP results and store results
+maxIPP_RF_results = fit_CART_maxIPP(fitting_data = synth_treefitting_RF, 
+                                    prune_data = prune_RF,
+                                    predict_uncertainty_data = synth_uncertainty_XB,
+                                    predict_uncertainty_data_other_pop = synth_uncertainty_XB_other_pop, 
+                                    test_data = data_test,
+                                    item_names = item_names,
+                                    savefile = file.path(model_dir, "fit.CART.RF"),
+                                    pred_df_treefitting = p_maxIPP_RF.synth_treefitting_RF, 
+                                    pred_df_synth_uncertainty = p_maxIPP_RF.synth_uncertainty_XB,
+                                    pred_df_synth_uncertainty_other_pop = p_maxIPP_RF.synth_uncertainty_XB_other_pop, 
+                                    pred_df_test = p_maxIPP_RF.test,
+                                    oos = out_of_sample, 
+                                    params = CART_params)
+write.csv(maxIPP_RF_results$pred_synth_treefitting, file.path(results_dir, "p_maxIPP_RF.synth_treefitting_RF.csv"), row.names = F)
+write.csv(maxIPP_RF_results$pred_synth_uncertainty, file.path(results_dir, "p_maxIPP_RF.synth_uncertainty_XB.csv"), row.names = F)
+write.csv(maxIPP_RF_results$pred_synth_uncertainty_other_pop, file.path(results_dir, "p_maxIPP_RF.synth_uncertainty_XB_other_pop.csv"), row.names = F)
+if (out_of_sample) {
+  write.csv(maxIPP_RF_results$pred_test, file.path(results_dir, "p_maxIPP_RF.test.csv"), row.names = F)
+}
 
-maxIPP_XB_results = fit_CART_maxIPP(fitting_data = synth_XB, prune_data = prune_XB, 
-                             predict_data = synth_XB_sub, test_data = data_test, 
-                             item_cols = XB_item_cols, 
-                             savefile = file.path(model_dir, "fit.CART.XB.new_predict_2nd"),
-                             p_df_synth = p_maxIPP_XB_synth, p_df_test = p_maxIPP_XB_test, 
-                             oos = out_of_sample, params = CART_params)
+maxIPP_XB_results = fit_CART_maxIPP(fitting_data = synth_treefitting_XB, 
+                                    prune_data = prune_XB, 
+                                    predict_uncertainty_data = synth_uncertainty_XB,
+                                    predict_uncertainty_data_other_pop = synth_uncertainty_XB_other_pop,
+                                    test_data = data_test, 
+                                    item_names = item_names, 
+                                    savefile = file.path(model_dir, "fit.CART.XB"),
+                                    pred_df_treefitting = p_maxIPP_XB.synth_treefitting_XB, 
+                                    pred_df_synth_uncertainty = p_maxIPP_XB.synth_uncertainty_XB,
+                                    pred_df_synth_uncertainty_other_pop = p_maxIPP_XB.synth_uncertainty_XB_other_pop, 
+                                    pred_df_test = p_maxIPP_XB.test, 
+                                    oos = out_of_sample, 
+                                    params = CART_params)
 
-write.csv(maxIPP_XB_results$p_synth, file.path(results_dir, "p_maxIPP_XB_uncertainty_subpopulation.csv"), row.names = F)
+write.csv(maxIPP_XB_results$pred_synth_treefitting, file.path(results_dir, "p_maxIPP_XB.synth_treefitting_XB.csv"), row.names = F)
+write.csv(maxIPP_XB_results$pred_synth_uncertainty, file.path(results_dir, "p_maxIPP_XB.synth_uncertainty_XB.csv"), row.names = F)
+write.csv(maxIPP_XB_results$pred_synth_uncertainty_other_pop, file.path(results_dir, "p_maxIPP_XB.synth_uncertainty_XB_other_pop.csv"), row.names = F)
 if (out_of_sample){
-  write.csv(maxIPP_XB_results$p_test, file.path(results_dir, "p_maxIPP_XB_test_third.csv"), row.names = F)
+  write.csv(maxIPP_XB_results$pred_test, file.path(results_dir, "p_maxIPP_XB.test.csv"), row.names = F)
 }
