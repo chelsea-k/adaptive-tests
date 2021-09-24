@@ -55,6 +55,7 @@ synth_XB = read.csv(file.path(synth_data_folder, "synth_treefitting_XB.csv"))
 synth_XB_UQ = read.csv(file.path(synth_data_folder, "synth_uncertainty_XB.csv"))
 prune_XB = read.csv(file.path(synth_data_folder, "prune_XB.csv"))
 n_synth = nrow(synth_XB)
+synth_XB_sub = read.csv("output/in_sample/subpopulation/synthetic_data/synth_uncertainty_XB.csv")
 
 # get column info for demo and item covariates
 item_names = setdiff(colnames(data_train), c("y", "Age"))
@@ -168,26 +169,26 @@ if (out_of_sample){
 return(results)
 }
 
-# Run function to get maxIPP results and store results
-maxIPP_RF_results = fit_CART_maxIPP(fitting_data = synth_RF, prune_data = prune_RF, 
-                             predict_data = synth_XB_UQ, test_data = data_test, 
-                             item_cols = RF_item_cols, 
-                             savefile = file.path(model_dir, "fit.CART.RF"),
-                             p_df_synth = p_maxIPP_RF_synth, p_df_test = p_maxIPP_RF_test, 
-                             oos = out_of_sample, params = CART_params)
-write.csv(maxIPP_RF_results$p_synth, file.path(results_dir, "p_maxIPP_RF_synth.csv"), row.names = F)
-if(out_of_sample) {
-  write.csv(maxIPP_RF_results$p_test, file.path(results_dir, "p_maxIPP_RF_test.csv"), row.names = F)
-}
+## Run function to get maxIPP results and store results
+#maxIPP_RF_results = fit_CART_maxIPP(fitting_data = synth_RF, prune_data = prune_RF, 
+#                             predict_data = synth_RF, test_data = data_test, 
+#                             item_cols = RF_item_cols, 
+#                             savefile = file.path(model_dir, "fit.CART.RF.new_predict"),
+#                             p_df_synth = p_maxIPP_RF_synth, p_df_test = p_maxIPP_RF_test, 
+#                             oos = out_of_sample, params = CART_params)
+#write.csv(maxIPP_RF_results$p_synth, file.path(results_dir, "p_maxIPP_RF_treefitting_data.csv"), row.names = F)
+#if(out_of_sample) {
+#  write.csv(maxIPP_RF_results$p_test, file.path(results_dir, "p_maxIPP_RF_test_second.csv"), row.names = F)
+#}
 
 maxIPP_XB_results = fit_CART_maxIPP(fitting_data = synth_XB, prune_data = prune_XB, 
-                             predict_data = synth_XB_UQ, test_data = data_test, 
+                             predict_data = synth_XB_sub, test_data = data_test, 
                              item_cols = XB_item_cols, 
-                             savefile = file.path(model_dir, "fit.CART.XB"),
+                             savefile = file.path(model_dir, "fit.CART.XB.new_predict_2nd"),
                              p_df_synth = p_maxIPP_XB_synth, p_df_test = p_maxIPP_XB_test, 
                              oos = out_of_sample, params = CART_params)
 
-write.csv(maxIPP_XB_results$p_synth, file.path(results_dir, "p_maxIPP_XB_synth.csv"), row.names = F)
+write.csv(maxIPP_XB_results$p_synth, file.path(results_dir, "p_maxIPP_XB_uncertainty_subpopulation.csv"), row.names = F)
 if (out_of_sample){
-  write.csv(maxIPP_XB_results$p_test, file.path(results_dir, "p_maxIPP_XB_test.csv"), row.names = F)
+  write.csv(maxIPP_XB_results$p_test, file.path(results_dir, "p_maxIPP_XB_test_third.csv"), row.names = F)
 }
