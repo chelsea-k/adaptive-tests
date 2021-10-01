@@ -2,7 +2,7 @@
 
 library(rpartMaxVPP) # can also use rpart for this one
 
-out_of_sample = TRUE
+out_of_sample = FALSE
 subpopulation = FALSE
 
 ########################## Hyperparamters ##############################
@@ -26,7 +26,7 @@ data_test$y <- as.integer(data_test$y)
 
 # read in generated data
 cat("Loading synthetic data...\n")
-synth_data_root <- "~/Desktop/output"
+synth_data_root <- "output"
 folder_root = ifelse(out_of_sample, 
                 file.path(synth_data_root, "out_of_sample"), 
                 file.path(synth_data_root, "in_sample"))
@@ -201,7 +201,7 @@ for (i in seq_along(maxDepth_vals)){
     }
   }
 }
-results = list(pred_treefitting = pred_df_treefitting, 
+results = list(pred_synth_treefitting = pred_df_treefitting, 
                pred_synth_uncertainty = pred_df_synth_uncertainty, 
                pred_synth_uncertainty_other_pop = pred_df_synth_uncertainty_other_pop)
 
