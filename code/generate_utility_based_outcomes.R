@@ -1,6 +1,6 @@
 # set parameters
 out_of_sample <- TRUE
-subpopulation <- TRUE
+subpopulation <- FALSE
 
 # read in original data
 IMC_data_all <- read.csv("preprocessed_original_data/IMC_data_all_preprocessed.csv")
@@ -23,8 +23,12 @@ U1 <- w / pr_1
 cutoff <- U0 / (U0 + U1)
 
 # compute utility function based outcomes
-gamma_star <- as.integer(synth_treefitting_df$phat >= cutoff)
-synth_treefitting_df$y <- gamma_star
+gamma_star <- as.integer(synth_treefitting_df$phat.mean >= cutoff)
+synth_treefitting_df$y.mean <- gamma_star
+
+gamma_star_draw <- as.integer(synth_treefitting_df$phat.draw >= cutoff)
+synth_treefitting_df$y.draw <- gamma_star_draw
+
 
 # store data
 synth_data_store_name <- "synth_treefitting_XB_util_based_outcomes.csv"
