@@ -5,12 +5,12 @@ library(bfa.mod)
 library(XBART)
 library(plyr)
 
-out_of_sample <- FALSE
+out_of_sample <- TRUE
 subpopulation <- FALSE
 
 # paths to item response data for fitting models
-IR_data_dir <- "~/CAT_project/preprocessed_original_data"
-output_dir <- "~/CAT_project/output"
+IR_data_dir <- "preprocessed_original_data"
+output_dir <- "output"
 if (out_of_sample) {
   IR_data_train_path <- file.path(IR_data_dir, "IMC_data_train_preprocessed.csv")
   IR_data_test_path <- file.path(IR_data_dir, "IMC_data_test_preprocessed.csv")
@@ -31,10 +31,9 @@ dir.create(model_dir, recursive = TRUE)
 ########################## Hyperparamters ##############################
 
 # Sampling parameters
-n_mcmc <- 1000   # number of "sample populations" to draw, D 
-n_samp <- 1000   # number of data points in each sample population, N
-n_prune_samp <- 50   # 2*n_mcmc * n_prune_samp is number of o.o.s data 
-                    #    for pruning tree under maxIPP strategy
+n_mcmc <- 1000   # number of "sample populations" to draw, D ########################### CHANGE BACK ########################### 
+n_samp <-  1000  # number of data points in each sample population, N ########################### CHANGE BACK ########################### 
+n_prune_samp <- 100   ########################### CHANGE BACK ########################### 
 
 # BFA parameters for fitting f(X)
 num_factor <- 3
@@ -49,7 +48,7 @@ if (subpopulation){
 
 # XBART.multinomial parameters for fitting f(Y|X)
 num_trees <- 30
-burnin <- 100
+burnin <- 100 ########################### CHANGE BACK ########################### 
 Nmin <- 4
 max_depth <- 250
 num_cutpoints <- 7
@@ -74,22 +73,29 @@ item_cols <- which(!(colnames(data_train) %in% c("y", names(cond_vars))))
 
 ########################## Model Fitting ##############################
 
-# fit Gaussian copula factor model
-fit_BFA <- bfa_copula(~., data=data_train[,item_demo_cols], 
-                     num.factor = num_factor,
-                     factor.scales = FALSE, 
-                     keep.scores = FALSE, 
-                     nburn = nburn, 
-                     nsim = 2*n_mcmc, 
-                     loading.prior = "gdp", 
-                     imh = FALSE)
-save(fit_BFA, file = file.path(model_dir, "fit_BFA"), ascii=TRUE)
-
+# check for Gaussian copula factor model & fit if not present
+BFA_model_file <- file.path(model_dir, "fit_BFA")
+if(file.exists(BFA_model_file)){
+  cat("Loading BFA model...")
+  load(BFA_model_file)
+} else{
+  fit_BFA <- bfa_copula(~., data=data_train[,item_demo_cols], 
+                       num.factor = num_factor,
+                       factor.scales = FALSE, 
+                       keep.scores = FALSE, 
+                       nburn = nburn, 
+                       nsim = 2*n_mcmc, 
+                       loading.prior = "gdp", 
+                       imh = FALSE)
+  save(fit_BFA, file = BFA_model_file, ascii=TRUE)
+}
 
 ##### fit XBART model ##### 
 # first compute needed params
 p_categorical <- length(item_cols)
 mtry <- p_categorical + 1
+XB_num_sweeps <- 2*n_mcmc + burnin
+XB_postburn_idx <- (burnin + 1):XB_num_sweeps
 
 # fit model; XBART crashed with all categorical inputs -> added dummy rnorm column
 fit_XBART <- XBART.multinomial(y = as.matrix(data_train$y), 
@@ -97,7 +103,7 @@ fit_XBART <- XBART.multinomial(y = as.matrix(data_train$y),
                                X = as.matrix(cbind(rnorm(n_train), data_train[,item_cols])), 
                                Xtest = as.matrix(cbind(rnorm(n_test), data_test[,item_cols])),
                                num_trees = num_trees, 
-                               num_sweeps = 2*n_mcmc + burnin, 
+                               num_sweeps = XB_num_sweeps, 
                                max_depth = max_depth, 
                                Nmin = Nmin, 
                                num_cutpoints = num_cutpoints, 
@@ -106,21 +112,22 @@ fit_XBART <- XBART.multinomial(y = as.matrix(data_train$y),
                                tau_a = 1, 
                                tau_b = 1,
                                no_split_penality = 1, 
-                               weight = weight, 
                                burnin = burnin, 
                                mtry = mtry, 
                                p_categorical = p_categorical, 
-                               kap = 1, 
-                               s = 1, 
                                verbose = FALSE, 
                                parallel = FALSE, 
                                random_seed = NULL, 
                                sample_weights_flag = TRUE, 
-                               separate_tree = FALSE)
+                               separate_tree = FALSE,
+                               weight = weight)
 save(fit_XBART, file = file.path(model_dir, "fit_XBART"), ascii=TRUE)
 
 # Predict on train and test data and save output
-XB_predict <- list(test = colMeans(fit_XBART$yhats_test[,,2]))
+XB_pred_train <- colMeans(fit_XBART$yhats_train[XB_postburn_idx,,2])
+XB_pred_test <- colMeans(fit_XBART$yhats_test[XB_postburn_idx,,2])
+
+XB_predict <- list(train = XB_pred_train, test = XB_pred_test)
 save(XB_predict, file = file.path(data_dir, "XB_predict"), ascii = TRUE)
 
 ########################## Sampling ##############################
@@ -128,11 +135,13 @@ save(XB_predict, file = file.path(data_dir, "XB_predict"), ascii = TRUE)
 # Draw samples from every other posterior draw of the fitted Gaussian copula factor model;
 # match up posterior indices to draw probabilities and risk class from the fitted XBART model;
 # Also compute posterior mean probability for fitting regression tree to
-synth_data_tree_fitting <- array(NA, dim=c(n_mcmc, n_samp, p+3))
-synth_data_uncertainty <- array(NA, dim=c(n_mcmc, n_samp, p+3))
-prune_data <- array(NA, dim=c(2*n_mcmc, n_prune_samp, p+3))
+synth_data_treefitting <- array(NA, dim=c(n_mcmc, n_samp, p+4))
+synth_data_uncertainty <- array(NA, dim=c(n_mcmc, n_samp, p+4))
+prune_data_treefitting <- array(NA, dim=c(n_mcmc, n_prune_samp, p+4))
+prune_data_uncertainty <- array(NA, dim=c(n_mcmc, n_prune_samp, p+4))
+
 for (j in 1:(2*n_mcmc)) {
-  cat(sprintf("----------------------Predicting for iteration %d out of %d \n", j, 2*n_mcmc))		
+  cat(sprintf("============ Predicting for iteration %d out of %d ============\n", j, 2*n_mcmc))		
   # Draw samples
   Xtilde <- predict_idx(fit_BFA, post.idx = j, n.samp = n_samp + n_prune_samp, 
                        cond.vars = cond_vars, cond.type = cond_type)
@@ -140,40 +149,41 @@ for (j in 1:(2*n_mcmc)) {
   p_XBART_draw <- predict.XBARTmultinomial(fit_XBART, 
                                            X=as.matrix(cbind(rnorm(nrow(Xtilde)), 
                                                             Xtilde[,X_item_cols])), 
-                                           iteration = as.integer(j))
+                                           iteration = as.integer(j+burnin))
   p_XBART_draw <- p_XBART_draw$yhats[,,2]
-  Ytilde <- rbinom(n = length(p_XBART_draw), size=1, prob=p_XBART_draw)
-  p_XBART_mean <- 0
-  for (k in 1:(2*n_mcmc)){
-    p_XBART <- predict.XBARTmultinomial(fit_XBART,
-                                       X=as.matrix(cbind(rnorm(nrow(Xtilde)), 
-                                                         Xtilde[,X_item_cols])), 
-                                       iteration=1L*k)
-    p_XBART_mean <- p_XBART_mean + p_XBART$yhats[,,2]
-  }
-  p_XBART_mean <- p_XBART_mean/n_mcmc
+  Ytilde_draw <- rbinom(n = length(p_XBART_draw), size=1, prob=p_XBART_draw)
+  
+  p_XBART_mean_pred <- predict.XBARTmultinomial(fit_XBART, 
+                                           X=as.matrix(cbind(rnorm(nrow(Xtilde)), 
+                                                             Xtilde[,X_item_cols])))
+  p_XBART_mean <- colMeans(p_XBART_mean_pred$yhats[XB_postburn_idx,,2])
+  Ytilde_mean <- rbinom(n = length(p_XBART_mean), size=1, prob=p_XBART_mean)
   
   # Store data
-  temp <- as.matrix(cbind(Xtilde, p_XBART_mean, p_XBART_draw, Ytilde))
+  temp <- as.matrix(cbind(Xtilde, p_XBART_mean, Ytilde_mean, p_XBART_draw, Ytilde_draw))
   if(j%%2 == 0) {
-    synth_data_tree_fitting[j/2,,] <- temp[1:n_samp,]
+    synth_data_treefitting[j/2,,] <- temp[1:n_samp,]
+    prune_data_treefitting[j/2,,] <- temp[(n_samp+1):(n_samp + n_prune_samp),]
   } else {
     synth_data_uncertainty[(j+1)/2,,] <- temp[1:n_samp,]
+    prune_data_uncertainty[(j+1)/2,,] <- temp[(n_samp+1):(n_samp + n_prune_samp),]
   }
-  prune_data[j,,] <- temp[(n_samp+1):(n_samp + n_prune_samp),]
 }
 
 # Data postprocessing and saving 
-synth_treefitting_XB <- adply(synth_data_tree_fitting, .margins = 1, .id="post.idx")
+synth_treefitting_XB <- adply(synth_data_treefitting, .margins = 1, .id="post.idx")
 synth_uncertainty_XB <- adply(synth_data_uncertainty, .margins = 1, .id="post.idx")
-prune_XB <- adply(prune_data, .margins = 1, .id="post.idx")
+prune_treefitting_XB <- adply(prune_data_treefitting, .margins = 1, .id="post.idx")
+prune_uncertainty_XB <- adply(prune_data_uncertainty, .margins = 1, .id="post.idx")
 Xtilde_cols <- which(!(colnames(data_train) %in% c("y", names(cond_vars))))
 Xtilde_colnames <- colnames(data_train)[Xtilde_cols]
-colnames(synth_treefitting_XB) <- c('post.idx', Xtilde_colnames, 'phat', 'phat.draw', 'y')
-colnames(synth_uncertainty_XB) <- c('post.idx', Xtilde_colnames, 'phat', 'phat.draw', 'y')
-colnames(prune_XB) <- c('post.idx', Xtilde_colnames, 'phat', 'phat.draw', 'y')
+colnames(synth_treefitting_XB) <- c('post.idx', Xtilde_colnames, 'phat.mean', 'y.mean', 'phat.draw', 'y.draw')
+colnames(synth_uncertainty_XB) <- c('post.idx', Xtilde_colnames, 'phat.mean', 'y.mean', 'phat.draw', 'y.draw')
+colnames(prune_treefitting_XB) <- c('post.idx', Xtilde_colnames, 'phat.mean', 'y.mean', 'phat.draw', 'y.draw')
+colnames(prune_uncertainty_XB) <- c('post.idx', Xtilde_colnames, 'phat.mean', 'y.mean', 'phat.draw', 'y.draw')
 
 
 write.csv(synth_treefitting_XB, file.path(data_dir, "synth_treefitting_XB.csv"), row.names = FALSE)
 write.csv(synth_uncertainty_XB, file.path(data_dir, "synth_uncertainty_XB.csv"), row.names = FALSE)
-write.csv(prune_XB, file.path(data_dir, "prune_XB.csv"), row.names = FALSE)
+write.csv(prune_treefitting_XB, file.path(data_dir, "prune_treefitting_XB.csv"), row.names = FALSE)
+write.csv(prune_uncertainty_XB, file.path(data_dir, "prune_uncertainty_XB.csv"), row.names = FALSE)
