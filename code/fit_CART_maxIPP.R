@@ -3,7 +3,7 @@
 
 library(rpartMaxVPP)
 
-out_of_sample = FALSE
+out_of_sample = TRUE
 subpopulation = FALSE
 
 ########################## Hyperparamters ##############################
@@ -36,11 +36,12 @@ folder_root = ifelse(out_of_sample,
                      file.path(synth_data_root, "in_sample"))
 folder =  file.path(folder_root, ifelse(subpopulation, "subpopulation", "all"))
 synth_data_folder = file.path(folder, "synthetic_data")
-synth_treefitting_RF = read.csv(file.path(synth_data_folder, "synth_treefitting_RF.csv"))
+#synth_treefitting_RF = read.csv(file.path(synth_data_folder, "synth_treefitting_RF.csv"))
 synth_treefitting_XB = read.csv(file.path(synth_data_folder, "synth_treefitting_XB.csv"))
 synth_uncertainty_XB = read.csv(file.path(synth_data_folder, "synth_uncertainty_XB.csv"))
-prune_RF = read.csv(file.path(synth_data_folder, "prune_RF.csv"))
-prune_XB = read.csv(file.path(synth_data_folder, "prune_XB.csv"))
+#prune_RF = read.csv(file.path(synth_data_folder, "prune_RF.csv"))
+prune_treefitting_XB = read.csv(file.path(synth_data_folder, "prune_treefitting_XB.csv"))
+prune_uncertainty_XB = read.csv(file.path(synth_data_folder, "prune_uncertainty_XB.csv"))
 
 # read in synthetic data from other population
 folder_other_pop =  file.path(folder_root, ifelse(subpopulation, "all", "subpopulation"))
@@ -98,7 +99,8 @@ fit_CART_maxIPP = function(fitting_data,
                            pred_df_test, 
                            oos, 
                            params, 
-						   save_all_trees = FALSE) {
+						               save_all_trees = FALSE,
+						               save_model = FALSE) {
  
 maxIPP_vals = params$maxIPP_vals   
 cp = params$cp
@@ -111,30 +113,34 @@ for (i in seq_along(maxIPP_vals)){
   
   # check if tree already exists
   tree_savefile <- paste0(savefile, ".regression_maxIPP.", maxIPP)
-  opt_tree_savefile <- paste0(savefile, ".regression_maxIPP.", maxIPP, ".opt")
+  opt_tree_savefile <- paste0(savefile, ".regression_maxIPP.", maxIPP, ".opt.fitboth")
   if(!file.exists(opt_tree_savefile)) {
     if(file.exists(tree_savefile)) {
-      cat("Loading big regression tree \n")
+      cat("Loading big regression tree... \n")
       load(tree_savefile)
     } else {
+        cat("Fitting big regression tree... \n")
         # fit the large CART tree
         item_cols = which(colnames(fitting_data) %in% item_names)
-        fit_rpart = rpartMaxVPP::rpart(p ~., data = cbind(p=fitting_data$phat, fitting_data[,item_cols]),
+        fit_rpart = rpartMaxVPP::rpart(p ~., data = cbind(p=fitting_data$phat.mean, fitting_data[,item_cols]),
                        method = "anova", cp=cp, maxdepth=25, minbucket = minbucket, maxvpp=maxIPP,
                        xval=0, maxcompete=0, maxsurrogate=0, usesurrogate=0, model=TRUE)
-        #if(maxIPP == 3){
-        #  save(fit_rpart, file=tree_savefile, ascii=TRUE)
-        #}
+        if(save_all_trees == TRUE){
+          if(save_model == FALSE) {fit_rpart$model <- NULL}
+          environment(fit_rpart$terms) <- NULL
+          fit_rpart$where <- NULL
+          save(fit_rpart, file=opt_tree_savefile, ascii=TRUE)
+        }
     }
     
-    # check if optimum tree exists 
     # find optimal pruning point based on threshold/patience
+    cat("Pruning regression tree... \n")
     cplist = fit_rpart$cptable
     threshold =  ifelse(maxIPP<5, 1e-4, 1e-5)
     opt_cp = cplist[1,"CP"]
     root_tree = prune(fit_rpart, cp=opt_cp)
     p_CART = predict(root_tree, newdata = prune_data[,item_cols], type='vector')
-    rmse_prev = sqrt(mean((p_CART - prune_data$phat)^2))
+    rmse_prev = sqrt(mean((p_CART - prune_data$phat.mean)^2))
     wait=0
     if(nrow(cplist) == 1) {
       opt_tree = fit_rpart
@@ -144,7 +150,7 @@ for (i in seq_along(maxIPP_vals)){
           this_cp = cplist[j,"CP"]
           pruned_tree = prune(fit_rpart, cp=this_cp)
           p_CART = predict(pruned_tree, newdata = prune_data[,item_cols], type='vector')
-          rmse = sqrt(mean((p_CART - prune_data$phat)^2))
+          rmse = sqrt(mean((p_CART - prune_data$phat.mean)^2))
           rmse_diff = rmse_prev - rmse
           if (rmse_diff > threshold){
               rmse_prev = rmse
@@ -159,8 +165,11 @@ for (i in seq_along(maxIPP_vals)){
       
        # Prune to optimal cp and store optimally pruned tree
         opt_tree = prune(fit_rpart, cp=opt_cp)
-  }
+    }
     if(save_all_trees == TRUE){
+      if(save_model == FALSE) {opt_tree$model <- NULL}
+      environment(opt_tree$terms) <- NULL
+      opt_tree$where <- NULL
       save(opt_tree, file=opt_tree_savefile, ascii=TRUE)
     }
   } else {
@@ -223,8 +232,8 @@ return(results)
 #  write.csv(maxIPP_RF_results$pred_test, file.path(results_dir, "p_maxIPP_RF.test.csv"), row.names = F)
 #}
 
-maxIPP_XB_results = fit_CART_maxIPP(fitting_data = synth_treefitting_XB, 
-                                    prune_data = prune_XB, 
+maxIPP_XB_results = fit_CART_maxIPP(fitting_data = synth_treefitting_XB,
+                                    prune_data = prune_treefitting_XB, 
                                     predict_uncertainty_data = synth_uncertainty_XB,
                                     predict_uncertainty_data_other_pop = synth_uncertainty_XB_other_pop,
                                     test_data = data_test, 
@@ -236,7 +245,8 @@ maxIPP_XB_results = fit_CART_maxIPP(fitting_data = synth_treefitting_XB,
                                     pred_df_test = p_maxIPP_XB.test, 
                                     oos = out_of_sample, 
                                     params = CART_params,
-									save_all_trees = FALSE)
+									                  save_all_trees = TRUE,
+									                  save_model = FALSE)
 
 write.csv(maxIPP_XB_results$pred_synth_treefitting, file.path(results_dir, "p_maxIPP_XB.synth_treefitting_XB.csv"), row.names = F)
 write.csv(maxIPP_XB_results$pred_synth_uncertainty, file.path(results_dir, "p_maxIPP_XB.synth_uncertainty_XB.csv"), row.names = F)
