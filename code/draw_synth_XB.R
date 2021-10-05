@@ -5,7 +5,7 @@ library(bfa.mod)
 library(XBART)
 library(plyr)
 
-out_of_sample <- TRUE
+out_of_sample <- FALSE
 subpopulation <- FALSE
 
 # paths to item response data for fitting models
@@ -31,9 +31,9 @@ dir.create(model_dir, recursive = TRUE)
 ########################## Hyperparamters ##############################
 
 # Sampling parameters
-n_mcmc <- 1000   # number of "sample populations" to draw, D ########################### CHANGE BACK ########################### 
-n_samp <-  1000  # number of data points in each sample population, N ########################### CHANGE BACK ########################### 
-n_prune_samp <- 100   ########################### CHANGE BACK ########################### 
+n_mcmc <- 1000   # number of "sample populations" to draw, D 
+n_samp <- 1000  # number of data points in each sample population, N
+n_prune_samp <- 100 
 
 # BFA parameters for fitting f(X)
 num_factor <- 3
@@ -48,7 +48,7 @@ if (subpopulation){
 
 # XBART.multinomial parameters for fitting f(Y|X)
 num_trees <- 30
-burnin <- 100 ########################### CHANGE BACK ########################### 
+burnin <- 100 
 Nmin <- 4
 max_depth <- 250
 num_cutpoints <- 7
@@ -76,9 +76,10 @@ item_cols <- which(!(colnames(data_train) %in% c("y", names(cond_vars))))
 # check for Gaussian copula factor model & fit if not present
 BFA_model_file <- file.path(model_dir, "fit_BFA")
 if(file.exists(BFA_model_file)){
-  cat("Loading BFA model...")
+  cat("Loading BFA model...\n")
   load(BFA_model_file)
 } else{
+  cat("Fitting BFA model...\n")		
   fit_BFA <- bfa_copula(~., data=data_train[,item_demo_cols], 
                        num.factor = num_factor,
                        factor.scales = FALSE, 
@@ -98,6 +99,7 @@ XB_num_sweeps <- 2*n_mcmc + burnin
 XB_postburn_idx <- (burnin + 1):XB_num_sweeps
 
 # fit model; XBART crashed with all categorical inputs -> added dummy rnorm column
+cat("Fitting XBART model...\n")
 fit_XBART <- XBART.multinomial(y = as.matrix(data_train$y), 
                                num_class = 2, 
                                X = as.matrix(cbind(rnorm(n_train), data_train[,item_cols])), 
