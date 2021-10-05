@@ -32,8 +32,8 @@ folder_root = ifelse(out_of_sample,
                 file.path(synth_data_root, "in_sample"))
 folder =  file.path(folder_root, ifelse(subpopulation, "subpopulation", "all"))
 synth_data_folder = file.path(folder, "synthetic_data")
-synth_treefitting_RF = read.csv(file.path(synth_data_folder, "synth_treefitting_RF.csv"))
-synth_treefitting_XB = read.csv(file.path(synth_data_folder, "synth_treefitting_XB.csv"))
+#synth_treefitting_RF = read.csv(file.path(synth_data_folder, "synth_treefitting_RF.csv"))
+#synth_treefitting_XB = read.csv(file.path(synth_data_folder, "synth_treefitting_XB.csv"))
 synth_treefitting_XB_util = read.csv(file.path(synth_data_folder, "synth_treefitting_XB_util_based_outcomes.csv"))
 synth_uncertainty_XB = read.csv(file.path(synth_data_folder, "synth_uncertainty_XB.csv"))
 
@@ -41,11 +41,11 @@ synth_uncertainty_XB = read.csv(file.path(synth_data_folder, "synth_uncertainty_
 folder_other_pop =  file.path(folder_root, ifelse(subpopulation, "all", "subpopulation"))
 synth_data_folder_other_pop = file.path(folder_other_pop, "synthetic_data")
 synth_uncertainty_XB_other_pop = read.csv(file.path(synth_data_folder_other_pop, "synth_uncertainty_XB.csv"))
-n_synth = nrow(synth_treefitting_XB)
+n_synth = nrow(synth_uncertainty_XB)
 n_real = nrow(data_train)
 
-synth_treefitting_XB <- rename(synth_treefitting_XB, y=y.draw, phat = phat.mean)
-synth_treefitting_XB_util <- rename(synth_treefitting_XB_util, y=y.draw, phat = phat.mean)
+#synth_treefitting_XB <- rename(synth_treefitting_XB, y=y.draw, phat = phat.mean)
+synth_treefitting_XB_util <- rename(synth_treefitting_XB_util, y=y.mean, phat = phat.mean)
 synth_uncertainty_XB <- rename(synth_uncertainty_XB, y=y.draw, phat = phat.mean)
 synth_uncertainty_XB_other_pop <- rename(synth_uncertainty_XB_other_pop, y=y.draw, phat = phat.mean)
 
@@ -241,49 +241,49 @@ return(results)
 #}
 
 
-cat("\n=== Fitting regression trees for XBART synthetic data ===\n")
-maxDepth_XB_results = fit_CART_maxDepth(fitting_data = synth_treefitting_XB, 
-                                        predict_uncertainty_data = synth_uncertainty_XB,
-                                        predict_uncertainty_data_other_pop = synth_uncertainty_XB_other_pop, 
-                                        test_data = data_test, 
-                                        item_names = item_names,  
-                                        savefile = file.path(model_dir, "fit.CART.XB"),
-                                        pred_df_treefitting = p_maxDepth_XB.synth_treefitting_XB, 
-                                        pred_df_synth_uncertainty = p_maxDepth_XB.synth_uncertainty_XB,
-                                        pred_df_synth_uncertainty_other_pop = p_maxDepth_XB.synth_uncertainty_XB_other_pop,
-                                        pred_df_test = p_maxDepth.XB_test, 
-                                        tree_type = "regression", 
-                                        oos = out_of_sample, 
-                                        params = CART_params)
-write.csv(maxDepth_XB_results$pred_synth_treefitting, file.path(results_dir, "p_maxDepth_XB.synth_treefitting_XB.csv"), row.names = F)
-write.csv(maxDepth_XB_results$pred_synth_uncertainty, file.path(results_dir, "p_maxDepth_XB.synth_uncertainty_XB.csv"), row.names = F)
-write.csv(maxDepth_XB_results$pred_synth_uncertainty_other_pop, file.path(results_dir, "p_maxDepth_XB.synth_uncertainty_XB_other_pop.csv"), row.names = F)
-if (out_of_sample){
-  write.csv(maxDepth_XB_results$pred_test, file.path(results_dir, "p_maxDepth_XB.test.csv"), row.names = F)
-}
+# cat("\n=== Fitting regression trees for XBART synthetic data ===\n")
+# maxDepth_XB_results = fit_CART_maxDepth(fitting_data = synth_treefitting_XB, 
+#                                         predict_uncertainty_data = synth_uncertainty_XB,
+#                                         predict_uncertainty_data_other_pop = synth_uncertainty_XB_other_pop, 
+#                                         test_data = data_test, 
+#                                         item_names = item_names,  
+#                                         savefile = file.path(model_dir, "fit.CART.XB"),
+#                                         pred_df_treefitting = p_maxDepth_XB.synth_treefitting_XB, 
+#                                         pred_df_synth_uncertainty = p_maxDepth_XB.synth_uncertainty_XB,
+#                                         pred_df_synth_uncertainty_other_pop = p_maxDepth_XB.synth_uncertainty_XB_other_pop,
+#                                         pred_df_test = p_maxDepth.XB_test, 
+#                                         tree_type = "regression", 
+#                                         oos = out_of_sample, 
+#                                         params = CART_params)
+# write.csv(maxDepth_XB_results$pred_synth_treefitting, file.path(results_dir, "p_maxDepth_XB.synth_treefitting_XB.csv"), row.names = F)
+# write.csv(maxDepth_XB_results$pred_synth_uncertainty, file.path(results_dir, "p_maxDepth_XB.synth_uncertainty_XB.csv"), row.names = F)
+# write.csv(maxDepth_XB_results$pred_synth_uncertainty_other_pop, file.path(results_dir, "p_maxDepth_XB.synth_uncertainty_XB_other_pop.csv"), row.names = F)
+# if (out_of_sample){
+#   write.csv(maxDepth_XB_results$pred_test, file.path(results_dir, "p_maxDepth_XB.test.csv"), row.names = F)
+# }
 
 
-cat("\n=== Fitting classification trees for real IMC data ===\n")
-class_real_results = fit_CART_maxDepth(fitting_data = data_train, 
-                                       predict_uncertainty_data = synth_uncertainty_XB,
-                                       predict_uncertainty_data_other_pop = synth_uncertainty_XB_other_pop, 
-                                       test_data = data_test, 
-                                       item_names = item_names, 
-                                       savefile = file.path(model_dir, "fit.CART.real"),
-                                       pred_df_treefitting = y_real.real_data,
-                                       pred_df_synth_uncertainty = y_real.synth_uncertainty_XB,
-                                       pred_df_synth_uncertainty_other_pop = y_real.synth_uncertainty_XB_other_pop,
-                                       pred_df_test = y_real.test,
-                                       tree_type = "classification", 
-                                       oos = out_of_sample,
-                                       params = CART_params)
-write.csv(class_real_results$pred_synth_treefitting, file.path(results_dir, "y_real.real_data.csv"), row.names = F)
-write.csv(class_real_results$pred_synth_uncertainty, file.path(results_dir, "y_real.synth_uncertainty_XB.csv"), row.names = F)
-write.csv(class_real_results$pred_synth_uncertainty_other_pop, file.path(results_dir, "y_real.synth_uncertainty_XB_other_pop.csv"), row.names = F)
-
-if (out_of_sample){
- write.csv(class_real_results$pred_test, file.path(results_dir, "y_real.test.csv"), row.names = F)
-}
+# cat("\n=== Fitting classification trees for real IMC data ===\n")
+# class_real_results = fit_CART_maxDepth(fitting_data = data_train, 
+#                                        predict_uncertainty_data = synth_uncertainty_XB,
+#                                        predict_uncertainty_data_other_pop = synth_uncertainty_XB_other_pop, 
+#                                        test_data = data_test, 
+#                                        item_names = item_names, 
+#                                        savefile = file.path(model_dir, "fit.CART.real"),
+#                                        pred_df_treefitting = y_real.real_data,
+#                                        pred_df_synth_uncertainty = y_real.synth_uncertainty_XB,
+#                                        pred_df_synth_uncertainty_other_pop = y_real.synth_uncertainty_XB_other_pop,
+#                                        pred_df_test = y_real.test,
+#                                        tree_type = "classification", 
+#                                        oos = out_of_sample,
+#                                        params = CART_params)
+# write.csv(class_real_results$pred_synth_treefitting, file.path(results_dir, "y_real.real_data.csv"), row.names = F)
+# write.csv(class_real_results$pred_synth_uncertainty, file.path(results_dir, "y_real.synth_uncertainty_XB.csv"), row.names = F)
+# write.csv(class_real_results$pred_synth_uncertainty_other_pop, file.path(results_dir, "y_real.synth_uncertainty_XB_other_pop.csv"), row.names = F)
+# 
+# if (out_of_sample){
+#  write.csv(class_real_results$pred_test, file.path(results_dir, "y_real.test.csv"), row.names = F)
+# }
 
 
 cat("\n=== Fitting classification trees for utility based outcome data ===\n")
@@ -308,44 +308,44 @@ if (out_of_sample){
   write.csv(class_util_results$pred_test, file.path(results_dir, "y_util.test.csv"), row.names = F)
 }
 
-cat("\n=== Fitting classification trees for RF synthetic data ===\n")
-class_RF_results = fit_CART_maxDepth(fitting_data = synth_treefitting_RF, 
-                                     predict_uncertainty_data = synth_uncertainty_XB,
-                                     predict_uncertainty_data_other_pop = synth_uncertainty_XB_other_pop, 
-                                     test_data = data_test, 
-                                     item_names = item_names, 
-                                     savefile = file.path(model_dir, "fit.CART.RF"),
-                                     pred_df_treefitting = y_RF.synth_treefitting_RF,
-                                     pred_df_synth_uncertainty = y_RF.synth_uncertainty_XB,
-                                     pred_df_synth_uncertainty_other_pop = y_RF.synth_uncertainty_XB_other_pop,
-                                     pred_df_test = y_RF.test,
-                                     tree_type = "classification", oos = out_of_sample,
-                                     params = CART_params)
-write.csv(class_RF_results$pred_synth_treefitting, file.path(results_dir, "y_RF.synth_treefitting_RF.csv"), row.names = F)
-write.csv(class_RF_results$pred_synth_uncertainty, file.path(results_dir, "y_RF.synth_uncertainty_XB.csv"), row.names = F)
-write.csv(class_RF_results$pred_synth_uncertainty_other_pop, file.path(results_dir, "y_RF.synth_uncertainty_XB_other_pop.csv"), row.names = F)
-if (out_of_sample){
- write.csv(class_RF_results$pred_test, file.path(results_dir, "y_RF.test.csv"), row.names = F)
-}
+# cat("\n=== Fitting classification trees for RF synthetic data ===\n")
+# class_RF_results = fit_CART_maxDepth(fitting_data = synth_treefitting_RF, 
+#                                      predict_uncertainty_data = synth_uncertainty_XB,
+#                                      predict_uncertainty_data_other_pop = synth_uncertainty_XB_other_pop, 
+#                                      test_data = data_test, 
+#                                      item_names = item_names, 
+#                                      savefile = file.path(model_dir, "fit.CART.RF"),
+#                                      pred_df_treefitting = y_RF.synth_treefitting_RF,
+#                                      pred_df_synth_uncertainty = y_RF.synth_uncertainty_XB,
+#                                      pred_df_synth_uncertainty_other_pop = y_RF.synth_uncertainty_XB_other_pop,
+#                                      pred_df_test = y_RF.test,
+#                                      tree_type = "classification", oos = out_of_sample,
+#                                      params = CART_params)
+# write.csv(class_RF_results$pred_synth_treefitting, file.path(results_dir, "y_RF.synth_treefitting_RF.csv"), row.names = F)
+# write.csv(class_RF_results$pred_synth_uncertainty, file.path(results_dir, "y_RF.synth_uncertainty_XB.csv"), row.names = F)
+# write.csv(class_RF_results$pred_synth_uncertainty_other_pop, file.path(results_dir, "y_RF.synth_uncertainty_XB_other_pop.csv"), row.names = F)
+# if (out_of_sample){
+#  write.csv(class_RF_results$pred_test, file.path(results_dir, "y_RF.test.csv"), row.names = F)
+# }
 
-cat("\n=== Fitting classification trees for XBART synthetic data ===\n\n")
-class_XB_results = fit_CART_maxDepth(fitting_data = synth_treefitting_XB, 
-                                     predict_uncertainty_data = synth_uncertainty_XB,
-                                     predict_uncertainty_data_other_pop = synth_uncertainty_XB_other_pop, 
-                                     test_data = data_test, 
-                                     item_names = item_names, 
-                                     savefile = file.path(model_dir, "fit.CART.XB"),
-                                     pred_df_treefitting = y_XB.synth_treefitting_XB,
-                                     pred_df_synth_uncertainty = y_XB.synth_uncertainty_XB,
-                                     pred_df_synth_uncertainty_other_pop = y_XB.synth_uncertainty_XB_other_pop,
-                                     pred_df_test = y_XB.test,
-                                     tree_type = "classification", 
-                                     oos = out_of_sample,
-                                     params = CART_params)
-write.csv(class_XB_results$pred_synth_treefitting, file.path(results_dir, "y_XB.synth_treefitting_XB.csv"), row.names = F)
-write.csv(class_XB_results$pred_synth_uncertainty, file.path(results_dir, "y_XB.synth_uncertainty_XB.csv"), row.names = F)
-write.csv(class_XB_results$pred_synth_uncertainty_other_pop, file.path(results_dir, "y_XB.synth_uncertainty_XB_other_pop.csv"), row.names = F)
-if (out_of_sample){
- write.csv(class_XB_results$pred_test, file.path(results_dir, "y_XB.test.csv"), row.names = F)
-}
+# cat("\n=== Fitting classification trees for XBART synthetic data ===\n\n")
+# class_XB_results = fit_CART_maxDepth(fitting_data = synth_treefitting_XB, 
+#                                      predict_uncertainty_data = synth_uncertainty_XB,
+#                                      predict_uncertainty_data_other_pop = synth_uncertainty_XB_other_pop, 
+#                                      test_data = data_test, 
+#                                      item_names = item_names, 
+#                                      savefile = file.path(model_dir, "fit.CART.XB"),
+#                                      pred_df_treefitting = y_XB.synth_treefitting_XB,
+#                                      pred_df_synth_uncertainty = y_XB.synth_uncertainty_XB,
+#                                      pred_df_synth_uncertainty_other_pop = y_XB.synth_uncertainty_XB_other_pop,
+#                                      pred_df_test = y_XB.test,
+#                                      tree_type = "classification", 
+#                                      oos = out_of_sample,
+#                                      params = CART_params)
+# write.csv(class_XB_results$pred_synth_treefitting, file.path(results_dir, "y_XB.synth_treefitting_XB.csv"), row.names = F)
+# write.csv(class_XB_results$pred_synth_uncertainty, file.path(results_dir, "y_XB.synth_uncertainty_XB.csv"), row.names = F)
+# write.csv(class_XB_results$pred_synth_uncertainty_other_pop, file.path(results_dir, "y_XB.synth_uncertainty_XB_other_pop.csv"), row.names = F)
+# if (out_of_sample){
+#  write.csv(class_XB_results$pred_test, file.path(results_dir, "y_XB.test.csv"), row.names = F)
+# }
 
