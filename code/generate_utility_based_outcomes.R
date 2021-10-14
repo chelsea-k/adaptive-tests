@@ -1,6 +1,6 @@
 # set parameters
 out_of_sample <- FALSE
-subpopulation <- TRUE 
+subpopulation <- FALSE 
 
 # read in original data
 IMC_data_all <- read.csv("preprocessed_original_data/IMC_data_all_preprocessed.csv")
@@ -13,10 +13,11 @@ folder = ifelse(out_of_sample,
 folder =  file.path(folder, ifelse(subpopulation, "subpopulation", "all"))
 synth_data_folder = file.path(folder, "synthetic_data")
 synth_treefitting_df = read.csv(file.path(synth_data_folder, "synth_treefitting_XB.csv"))
+synth_uncertainty_df = read.csv(file.path(synth_data_folder, "synth_uncertainty_XB.csv"))
 
 # compute threshold to determine gamma^*_k
-pr_0 <- sum(as.integer(IMC_data_all$y) == 0)/length(IMC_data_all$y)
-pr_1 <- sum(as.integer(IMC_data_all$y) == 1)/length(IMC_data_all$y)
+pr_1 <- mean(synth_uncertainty_df$phat.mean)
+pr_0 <- 1 - pr_1
 w <- 0.5
 U0 <- (1 - w) / pr_0
 U1 <- w / pr_1
