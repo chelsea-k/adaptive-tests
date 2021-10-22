@@ -1,4 +1,4 @@
-# Script for plotting Figure 10 from Krantsevich et al., 
+# Script for plotting Figure 9 from Krantsevich et al., 
 # "BAYESIAN DECISION THEORY FOR TREE-BASED ADAPTIVE SCREENING TESTS 
 #     WITH AN APPLICATION TO YOUTH DELINQUENCY"
 
@@ -74,7 +74,7 @@ for (i in seq_along(maxIPP_vals)){
                                            Delta=CT_met_test$util-XB_met_test$util)
 }
 
-# Post-process results and create plot for Figure 10
+# Post-process results and create plot for Figure 9
 delta_draws_all <- rbind(cbind(delta_draws_train, Type = "Predicted"), 
                         cbind(delta_draws_test, Type = "Actual"))
 
@@ -88,7 +88,7 @@ ggplot(delta_draws_all, aes(x=maxIPP, y=Delta, color=Type)) +
   scale_color_manual(values=cbPalette) +
   xlab("Number of Items")  
 
-ggsave(file.path(plots_dir,"Fig10.png"), height = 3.25, width = 9, units = "in", dpi = 200)
+ggsave(file.path(plots_dir,"Fig9.png"), height = 3.25, width = 9, units = "in", dpi = 200)
 
 
 
