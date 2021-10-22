@@ -2,7 +2,7 @@
 
 library(rpartMaxVPP) # can also use rpart for this one
 library(dplyr)
-out_of_sample = FALSE
+out_of_sample = TRUE
 subpopulation = FALSE
 
 ########################## Hyperparamters ##############################
@@ -34,7 +34,7 @@ folder =  file.path(folder_root, ifelse(subpopulation, "subpopulation", "all"))
 synth_data_folder = file.path(folder, "synthetic_data")
 #synth_treefitting_RF = read.csv(file.path(synth_data_folder, "synth_treefitting_RF.csv"))
 #synth_treefitting_XB = read.csv(file.path(synth_data_folder, "synth_treefitting_XB.csv"))
-synth_treefitting_XB_util = read.csv(file.path(synth_data_folder, "synth_treefitting_XB_util_based_outcomes.csv"))
+synth_treefitting_XB_util = read.csv(file.path(synth_data_folder, "synth_treefitting_XB_util_based_outcomes_w_0.4.csv"))
 synth_uncertainty_XB = read.csv(file.path(synth_data_folder, "synth_uncertainty_XB.csv"))
 
 
@@ -300,12 +300,12 @@ class_util_results = fit_CART_maxDepth(fitting_data = synth_treefitting_XB_util,
                                        tree_type = "classification", 
                                        oos = out_of_sample,
                                        params = CART_params)
-write.csv(class_util_results$pred_synth_treefitting, file.path(results_dir, "y_util.synth_treefitting_XB_util.csv"), row.names = F)
-write.csv(class_util_results$pred_synth_uncertainty, file.path(results_dir, "y_util.synth_uncertainty_XB.csv"), row.names = F)
-write.csv(class_util_results$pred_synth_uncertainty_other_pop, file.path(results_dir, "y_util.synth_uncertainty_XB_other_pop.csv"), row.names = F)
+write.csv(class_util_results$pred_synth_treefitting, file.path(results_dir, "y_util.synth_treefitting_XB_util_w_0.4.csv"), row.names = F)
+write.csv(class_util_results$pred_synth_uncertainty, file.path(results_dir, "y_util.synth_uncertainty_XB.csv_w_0.4"), row.names = F)
+write.csv(class_util_results$pred_synth_uncertainty_other_pop, file.path(results_dir, "y_util.synth_uncertainty_XB_other_pop_w_0.4.csv"), row.names = F)
 
 if (out_of_sample){
-  write.csv(class_util_results$pred_test, file.path(results_dir, "y_util.test.csv"), row.names = F)
+  write.csv(class_util_results$pred_test, file.path(results_dir, "y_util.test_w_0.4.csv"), row.names = F)
 }
 
 # cat("\n=== Fitting classification trees for RF synthetic data ===\n")

@@ -18,7 +18,7 @@ synth_uncertainty_df = read.csv(file.path(synth_data_folder, "synth_uncertainty_
 # compute threshold to determine gamma^*_k
 pr_1 <- mean(synth_uncertainty_df$phat.mean)
 pr_0 <- 1 - pr_1
-w <- 0.5
+w <- 0.6
 U0 <- (1 - w) / pr_0
 U1 <- w / pr_1
 cutoff <- U0 / (U0 + U1)
@@ -32,7 +32,7 @@ synth_treefitting_df$y.draw <- gamma_star_draw
 
 
 # store data
-synth_data_store_name <- "synth_treefitting_XB_util_based_outcomes.csv"
+synth_data_store_name <- paste0("synth_treefitting_XB_util_based_outcomes_w_", w, ".csv")
 write.csv(synth_treefitting_df, 
           file.path(synth_data_folder, synth_data_store_name),
           row.names = FALSE)
