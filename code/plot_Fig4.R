@@ -4,12 +4,14 @@
 
 source("adaptive_tests/code/util_functions.R")  # get_cutoff(), get_utility()
 library(ggplot2)
+library(dplyr)
 theme_set(theme_bw(base_size=14))
 
 # Set parameters
 maxIPP_vals <- c(2:15)
 n_maxIPP <- length(maxIPP_vals)
-w_vals <- c(0.25, 0.5, 0.75)
+w_vals <- c(0.25, 0.5, 0.75, 0.4, 0.6)
+w_vals_plot <- c(0.25, 0.5, 0.75)
 
 # Set up data folders and load data
 data_dir <- "output/in_sample/all/synthetic_data"
@@ -70,11 +72,13 @@ write.csv(cutoffs, file.path(results_dir, "cutoffs.csv"), row.names = FALSE)
 
 
 # Post-process results and create plot for Figure 4
-delta_draws_all$maxIPP <- as.factor(delta_draws_all$maxIPP)
-delta_draws_all$w <- as.factor(delta_draws_all$w)
+delta_draws_plot <- delta_draws_all
+delta_draws_plot <- delta_draws_plot %>%
+  filter(w %in% w_vals_plot) %>%
+  mutate(maxIPP = as.factor(maxIPP), w = as.factor(w))
 cbPalette <- c("#009E73", "#0072B2", "#D55E00")
 
-ggplot(delta_draws_all, aes(x=maxIPP, y=Delta, fill=w)) +
+ggplot(delta_draws_plot, aes(x=maxIPP, y=Delta, fill=w)) +
  geom_boxplot(outlier.shape=NA, position=position_dodge2(padding=0.2, width=1.2)) + 
  theme(plot.title = element_text(hjust = 0.5))  + 
  ggtitle("Utility Differences (Changing Utility Function)") + ylab(expression(Delta)) +
@@ -82,5 +86,5 @@ ggplot(delta_draws_all, aes(x=maxIPP, y=Delta, fill=w)) +
  ylim(c(-0.15,0.05)) +
  xlab("Number of Items")  
 
-ggsave(file.path(plots_dir, "Fig4.png"), height = 3.25, width = 8, units = "in", dpi = 200)
+ggsave(file.path(plots_dir, "Fig4.png"), height = 3.25, width = 10, units = "in", dpi = 200)
 

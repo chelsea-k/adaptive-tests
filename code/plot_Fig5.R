@@ -9,7 +9,7 @@ theme_set(theme_bw(base_size=14))
 
 # Set parameters
 maxIPP <- 3
-w_list <- c(0.25, 0.5, 0.75)
+w_list <- c(0.25, 0.4, 0.5, 0.6, 0.75)
 post_idx_list <- c(100, 200, 300, 400)
 
 # Set up data folders and load item response data, cutoff dataframe
@@ -67,7 +67,7 @@ for (t in seq_along(post_idx_list)) {
 # Post-process results and create plot for Figure 5
 ROC_points$w <- as.factor(ROC_points$w)
 ROC_points$post_idx <- as.integer(ROC_points$post_idx)
-cbPalette <- c("#009E73", "#0072B2", "#D55E00")
+cbPalette <- c("#009E73", "#808080", "#0072B2", "#000000", "#D55E00")
 
 ggplot(ROC_points, aes(x=Specificity, y=Sensitivity, group=w)) +
   xlim(c(1,0)) +
@@ -78,11 +78,11 @@ ggplot(ROC_points, aes(x=Specificity, y=Sensitivity, group=w)) +
   geom_point(size=3.5,  aes(color=w, shape=w)) +
   scale_linetype_manual(name="Action", values=c("dashed","solid")) +
   scale_colour_manual(values = cbPalette) + 
-  scale_shape_manual(values=c(16,15,17)) +
+  scale_shape_manual(values=c(17,18,15,20,16)) +
   theme(plot.title = element_text(hjust = 0.5)) +
   facet_grid(cols=vars(post_idx), labeller = label_both) 
 
-ggsave(file.path(plots_dir,"Fig5.png"), height = 3, width = 10, units = "in", dpi = 250)
+ggsave(file.path(plots_dir,"Fig5.png"), height = 3, width = 11, units = "in", dpi = 250)
 
 
 

@@ -9,13 +9,13 @@ out_of_sample <- FALSE
 subpopulation <- FALSE
 
 # paths to item response data for fitting models
-IR_data_dir <- "preprocessed_original_data"
+IR_data_dir <- "simulated_data"
 output_dir <- "output"
 if (out_of_sample) {
-  IR_data_train_path <- file.path(IR_data_dir, "IMC_data_train_preprocessed.csv")
-  IR_data_test_path <- file.path(IR_data_dir, "IMC_data_test_preprocessed.csv")
+  IR_data_train_path <- file.path(IR_data_dir, "item_response_data_train.csv")
+  IR_data_test_path <- file.path(IR_data_dir, "item_response_data_test.csv")
 } else {
-  IR_data_path <- file.path(IR_data_dir, "IMC_data_all_preprocessed.csv")
+  IR_data_path <- file.path(IR_data_dir, "item_response_data_all.csv")
 }
 
 # directories for model and data storage
@@ -134,9 +134,9 @@ save(XB_predict, file = file.path(data_dir, "XB_predict"), ascii = TRUE)
 
 ########################## Sampling ##############################
 
-# Draw samples from every other posterior draw of the fitted Gaussian copula factor model;
+# Draw posterior samples from the fitted Gaussian copula factor model;
 # match up posterior indices to draw probabilities and risk class from the fitted XBART model;
-# Also compute posterior mean probability for fitting regression tree to
+# Also compute posterior mean probability \bar{E}(Y|x) for fitting regression tree 
 synth_data_treefitting <- array(NA, dim=c(n_mcmc, n_samp, p+4))
 synth_data_uncertainty <- array(NA, dim=c(n_mcmc, n_samp, p+4))
 prune_data_treefitting <- array(NA, dim=c(n_mcmc, n_prune_samp, p+4))

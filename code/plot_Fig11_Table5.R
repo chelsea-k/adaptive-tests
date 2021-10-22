@@ -1,4 +1,4 @@
-# Script for plotting Figure 11 and Table 5 from Krantsevich et al., 
+# Script for plotting Figure 10 and Table 4 from Krantsevich et al., 
 # "BAYESIAN DECISION THEORY FOR TREE-BASED ADAPTIVE SCREENING TESTS 
 #     WITH AN APPLICATION TO YOUTH DELINQUENCY"
 
@@ -11,12 +11,12 @@ library(xtable)
 library(ggplot2)
 theme_set(theme_bw(base_size=14))
 
-# paraemeters
+# parameters
 maxIPP_list <- c(2:15)
-w_list <- c(0.5)
+w_list <- c(0.6)
 
 # Set up folders and load data
-data_test <- read.csv("preprocessed_original_data/IMC_data_test_preprocessed.csv")
+data_test <- read.csv("simulated_data/item_response_data_test.csv")
 data_test$y <- as.integer(data_test$y)
 sub_rows <- which(data_test$Age>=15)
 
@@ -71,7 +71,7 @@ for (i in seq_along(maxIPP_list)){
 results$Utility <- (results$w)*(results$Sensitivity)+(1-results$w)*(results$Specificity)
 write.csv(results, file.path(results_dir, "sens.spec.results.subpopulation.test.csv"), row.names=FALSE)
 
-# Post-process results and create plot for Figure 11
+# Post-process results and create plot for Figure 10
 results$Num.Items <- as.factor(results$Num.Items)
 cbPalette <- c("#000000","#7a7a7a")
 
@@ -88,9 +88,9 @@ ggplot(results_long_diff, aes(x=Num.Items, y=Difference, fill=Higher)) +
   facet_grid(rows=vars(Quantity)) +
   scale_fill_manual(values=cbPalette) +
   xlab("Number of Items")  
-ggsave(file.path(plots_dir,"Fig11.png"), height = 5, width = 7, units = "in", dpi = 200)
+ggsave(file.path(plots_dir,"Fig10.png"), height = 5, width = 7, units = "in", dpi = 200)
 
-# Reformat results to be as in Table 5 
+# Reformat results to be as in Table 4 
 cT <- dplyr::tribble(
   ~Population, ~Sensitivity, ~Specificity, ~Utility,
   "Ages 15+",    "Sub_Sens", "Sub_Spec", "Sub_Util",
@@ -99,6 +99,6 @@ cT <- dplyr::tribble(
 results_wide <- blocks_to_rowrecs(results, cT, keyColumns = "Num.Items")
 results_wide <- results_wide[,c(1,2,5,3,6,4,7)]
 
-# Export table to latex format to create Table 5 (needs some reformatting of columns)
+# Export table to latex format to create Table 4 (needs some reformatting of columns)
 print(xtable(results_wide, type = "latex", digits=c(0,0,3,3,3,3,3,3)), 
-      include.rownames=FALSE, file=file.path(tables_dir, "table5.tex"))
+      include.rownames=FALSE, file=file.path(tables_dir, "table4.tex"))

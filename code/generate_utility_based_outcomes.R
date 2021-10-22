@@ -1,9 +1,8 @@
+# Script for generating synthetic item response data with utility based outcomes
+
 # set parameters
 out_of_sample <- FALSE
 subpopulation <- FALSE 
-
-# read in original data
-IMC_data_all <- read.csv("preprocessed_original_data/IMC_data_all_preprocessed.csv")
 
 # read in generated data
 synth_data_root <- "output"

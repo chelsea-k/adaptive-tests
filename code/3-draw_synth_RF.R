@@ -3,30 +3,22 @@
 
 library(randomForest)
 
-out_of_sample = TRUE
-subpopulation = TRUE
+out_of_sample <- FALSE
+subpopulation <- FALSE
 
 ########################## Hyperparamters ##############################
 
-n_samp = 1000000
-n_prune = 100000
+n_samp <- 1000000
+n_prune <- 100000
 
 ########################## Data Preparation ##############################
 
-# read in data
-# if(out_of_sample){
-#   data_train = read.csv("data/item_response_data/item.response.data_train.csv")
-#   data_test = read.csv("data/item_response_data/item.response.data_test.csv")
-# } else {
-#   data_train = read.csv("data/item_response_data/item.response.data.all.csv")
-#   data_test = data_train
-# }
-original_data_dir <- "~/Desktop/ASU/Research/CAT_project/preprocessed_original_data"
+IR_data_dir <- "simulated_data"
 if(out_of_sample){
-  data_train = read.csv(file.path(original_data_dir, "IMC_data_train_preprocessed.csv"))
-  data_test = read.csv(file.path(original_data_dir, "IMC_data_test_preprocessed.csv"))
+  data_train = read.csv(file.path(IR_data_dir, "item_response_data_train.csv"))
+  data_test = read.csv(file.path(IR_data_dir, "item_response_data_test.csv"))
 } else {
-  data_train = read.csv(file.path(original_data_dir, "IMC_data_all_preprocessed.csv"))
+  data_train = read.csv(file.path(IR_data_dir, "item_response_data_all.csv"))
   data_test = data_train
 }
 
@@ -39,12 +31,6 @@ item_cols = which(!(colnames(data_train) %in% c("y", "Age")))
 item_names = colnames(data_train)[item_cols]
 
 # directories for model and data storage
-# folder = ifelse(out_of_sample, "data/out_of_sample/", "data/in_sample/")
-# folder = paste0(folder, ifelse(subpopulation, "subpopulation/", "all/"))
-# data_dir = paste0(folder, "synthetic_data/")
-# model_dir = paste0(folder, "model_fits/")
-# dir.create(data_dir, recursive = TRUE)
-# dir.create(model_dir, recursive = TRUE)
 output_dir <- "~/Desktop/ASU/Research/CAT_project/output"
 folder <- ifelse(out_of_sample, 
                  file.path(output_dir, "out_of_sample"), 
@@ -88,6 +74,6 @@ synth_treefitting <- synth_data[1:n_samp,]
 synth_uncertainty <- synth_data[(n_samp+1):(2*n_samp),]
 prune_data <- synth_data[(2*n_samp+1):(2*n_samp+n_prune),]
 
-#write.csv(synth_treefitting, file=file.path(data_dir, "synth_treefitting_RF.csv"), row.names = F)
-#write.csv(synth_uncertainty, file=file.path(data_dir, "synth_uncertainty_RF.csv"), row.names = F)
-#write.csv(prune_data, file=file.path(data_dir, "prune_RF.csv"), row.names = F)
+write.csv(synth_treefitting, file=file.path(data_dir, "synth_treefitting_RF.csv"), row.names = F)
+write.csv(synth_uncertainty, file=file.path(data_dir, "synth_uncertainty_RF.csv"), row.names = F)
+write.csv(prune_data, file=file.path(data_dir, "prune_RF.csv"), row.names = F)

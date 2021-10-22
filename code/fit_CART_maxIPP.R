@@ -17,12 +17,12 @@ n_maxIPP = length(CART_params$maxIPP_vals)
 ########################## Data Preparation ##############################
 
 # read in item response data
-original_data_dir <- "preprocessed_original_data"
+IR_data_dir <- "simulated_data"
 if(out_of_sample){
-  data_train = read.csv(file.path(original_data_dir, "IMC_data_train_preprocessed.csv"))
-  data_test = read.csv(file.path(original_data_dir, "IMC_data_test_preprocessed.csv"))
+  data_train = read.csv(file.path(IR_data_dir, "item_response_data_train.csv"))
+  data_test = read.csv(file.path(IR_data_dir, "item_response_data_test.csv"))
 } else {
-  data_train = read.csv(file.path(original_data_dir, "IMC_data_all_preprocessed.csv"))
+  data_train = read.csv(file.path(IR_data_dir, "item_response_data_all.csv"))
   data_test = data_train
 }
 

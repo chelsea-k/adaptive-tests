@@ -6,8 +6,8 @@
 ## using the inversion method to get the proper marginals. 
 
 # Directory for saving simulated data
-save.dir = "data/item_response_data/"
-dir.create(save.dir, recursive = TRUE)
+save_dir = "simulated_data/"
+dir.create(save_dir, recursive = TRUE)
 
 # Set parameters for simulation
 ntrain = 1000
@@ -15,12 +15,12 @@ ntest = 1000
 n = ntrain + ntest
 k = 2  # number of factors 
 p = 5  # number of items 
-n.resp = sample(2:5, p, replace=TRUE) # number of responses per item
-n.resp = c(n.resp, 7) # last covariate will represent Age (7 levels: 12-18)
-prop.at.risk = 0.15   # proportion in the "at-risk" group
+n_resp = sample(2:5, p, replace=TRUE) # number of responses per item
+n_resp = c(n_resp, 7) # last covariate will represent Age (7 levels: 12-18)
+prop_at_risk = 0.15   # proportion in the "at-risk" group
 
 # Get cutpoints for marginals (we assume uniform marginals here)
-cuts = apply(as.matrix(n.resp), MARGIN = 1, function(x) {qnorm(c(0:x)/x)})
+cuts = apply(as.matrix(n_resp), MARGIN = 1, function(x) {qnorm(c(0:x)/x)})
 
 # Generate the factor loadings matrix Lambda. The entries of lambda
 # are chosen to create a nice distribution of correlations between
@@ -36,7 +36,7 @@ for (j in 1:k){
   Lambda[zeros[,j],j] = 0
 }
 
-Lambda.y = matrix(1/sqrt(k),1,k)
+Lambda_y = matrix(1/sqrt(k),1,k)
 
 # Draw factor scores Eta, compute Z = Lambda*Eta + Epsilon, scale Z by sd
 Eta = matrix(rnorm(k*n), nrow=k, ncol=n)
@@ -50,27 +50,27 @@ X = t(apply(matrix(1:(p+1)), 1, function(j) cut(Z[j,], cuts[[j]],labels=FALSE)))
 # Shift Age covariate to be from 12-18, not 1-7
 X[p+1,] = X[p+1,] + 11 
 
-# Compute Z.y and y
-Z.y = Lambda.y %*% Eta + rnorm(n)
-Z.y = Z.y/sqrt(1+sum(Lambda.y^2))
-mu.Zy = qnorm(prop.at.risk)
-Z.y = Z.y + mu.Zy 
-y = 1*(Z.y>0)
+# Compute Z_y and y
+Z_y = Lambda_y %*% Eta + rnorm(n)
+Z_y = Z_y/sqrt(1+sum(Lambda_y^2))
+mu_Zy = qnorm(prop_at_risk)
+Z_y = Z_y + mu_Zy 
+y = 1*(Z_y>0)
 
 # Store the final simulated data 
-sim.data = cbind(y=t(y), data.frame(t(X)))
-colnames(sim.data)[p+2] = "Age"
-write.csv(sim.data, paste0(save.dir, "item.response.data.all.csv"), row.names=F)
-write.csv(sim.data[1:ntrain,], paste0(save.dir, "item.response.data.train.csv"), row.names=F)
-write.csv(sim.data[(ntrain+1):n,], paste0(save.dir, "item.response.data.test.csv"), row.names=F)
+sim_data = cbind(y=t(y), data.frame(t(X)))
+colnames(sim_data)[p+2] = "Age"
+write.csv(sim_data, paste0(save_dir, "item_response_data_all.csv"), row.names=F)
+write.csv(sim_data[1:ntrain,], paste0(save_dir, "item_response_data_train.csv"), row.names=F)
+write.csv(sim_data[(ntrain+1):n,], paste0(save_dir, "item_response_data_test.csv"), row.names=F)
 
 # Uncomment below to save more info about the generated data for other use
-# copula.sim = list(sim.data = sim.data, Z=Z, Z.y = Z.y, factor.scores=Eta,
-#                   Lambda=Lambda, Lambda.y = Lambda.y,
-#                   mu.Zy = mu.Zy, k=k, p=p,
+# copula.sim = list(sim_data = sim_data, Z=Z, Z_y = Z_y, factor.scores=Eta,
+#                   Lambda=Lambda, Lambda_y = Lambda_y,
+#                   mu_Zy = mu_Zy, k=k, p=p,
 #                   ntrain=ntrain, ntest=ntest,
-#                   prop.at.risk = prop.at.risk,
+#                   prop_at_risk = prop_at_risk,
 #                   cuts = cuts)
-# save(copula.sim, file=paste0(save.dir, "copula.sim.txt"), ascii = TRUE)
+# save(copula.sim, file=paste0(save_dir, "copula.sim.txt"), ascii = TRUE)
 
 
