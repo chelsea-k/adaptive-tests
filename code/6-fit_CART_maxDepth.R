@@ -258,7 +258,7 @@ if (out_of_sample){
 }
 
 
-cat("\n=== Fitting classification trees for real IMC data ===\n")
+cat("\n=== Fitting classification trees for actual item response data ===\n")
 class_real_results = fit_CART_maxDepth(fitting_data = data_train,
                                        predict_uncertainty_data = synth_uncertainty_XB,
                                        predict_uncertainty_data_other_pop = synth_uncertainty_XB_other_pop,

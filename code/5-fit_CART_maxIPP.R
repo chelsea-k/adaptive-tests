@@ -228,7 +228,9 @@ maxIPP_RF_results = fit_CART_maxIPP(fitting_data = synth_treefitting_RF,
                                     pred_df_synth_uncertainty_other_pop = p_maxIPP_RF.synth_uncertainty_XB_other_pop, 
                                     pred_df_test = p_maxIPP_RF.test,
                                     oos = out_of_sample, 
-                                    params = CART_params)
+                                    params = CART_params,
+                                    save_all_trees = FALSE,
+                                    save_model = FALSE)
 write.csv(maxIPP_RF_results$pred_synth_treefitting, file.path(results_dir, "p_maxIPP_RF.synth_treefitting_RF.csv"), row.names = F)
 write.csv(maxIPP_RF_results$pred_synth_uncertainty, file.path(results_dir, "p_maxIPP_RF.synth_uncertainty_XB.csv"), row.names = F)
 write.csv(maxIPP_RF_results$pred_synth_uncertainty_other_pop, file.path(results_dir, "p_maxIPP_RF.synth_uncertainty_XB_other_pop.csv"), row.names = F)
